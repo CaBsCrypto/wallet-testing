@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { isAllowed, setAllowed, requestAccess, getAddress } from '@stellar/freighter-api';
+// import { isAllowed, setAllowed, requestAccess, getAddress } from '@stellar/freighter-api';
 
 export interface WalletState {
     isConnected: boolean;
@@ -20,6 +20,7 @@ export function useWallet() {
         setState(prev => ({ ...prev, isConnecting: true }));
         try {
             // requestAccess triggers the popup and returns the address if authorized
+            const { requestAccess } = await import('@stellar/freighter-api');
             const response = await requestAccess();
             // The response itself might be the object or contain address/error
             // Based on types seen in getAddress.ts: { address: string, error?: ... }
@@ -40,6 +41,7 @@ export function useWallet() {
 
     const checkConnection = async () => {
         try {
+            const { isAllowed, getAddress } = await import('@stellar/freighter-api');
             // isAllowed returns { isAllowed: boolean }
             const allowedRes = await isAllowed();
             if (allowedRes && allowedRes.isAllowed) {
