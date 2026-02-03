@@ -12,7 +12,7 @@ import {
 
 // import { signTransaction } from '@stellar/freighter-api'; // Removed static import
 
-const CONTRACT_ID = "CCSO2GRRRTSEMSPLVDIDLBDAKWEQAQEUHCXENY54QXT3VTRKHLE6K3OH";
+const CONTRACT_ID = "CDISG7H5K6UATT4P2OUHOZ7X6Y7UEJ2YEHRADY55QD2YF4RRQGQNBXC5";
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPHRASE = Networks.TESTNET;
 
@@ -25,6 +25,17 @@ export interface Pet {
     level: number;
     xp: number;
     design: string;
+}
+
+export interface PetStats {
+    strength: number;
+    agility: number;
+    intelligence: number;
+    energy: number;
+    last_update: number;
+    wins: number;
+    losses: number;
+    gold: number;
 }
 
 export async function getPet(ownerAddress: string): Promise<Pet | null> {
@@ -96,6 +107,45 @@ export async function getPet(ownerAddress: string): Promise<Pet | null> {
     }
 }
 
+export async function getPetStats(ownerAddress: string): Promise<PetStats | null> {
+    const contract = new Contract(CONTRACT_ID);
+    const operation = contract.call("get_stats", new Address(ownerAddress).toScVal());
+
+    try {
+        const transaction = new TransactionBuilder(
+            new Account(ownerAddress, "0"),
+            { fee: "100", networkPassphrase: NETWORK_PASSPHRASE }
+        )
+            .addOperation(operation)
+            .setTimeout(30)
+            .build();
+
+        const result = await server.simulateTransaction(transaction);
+
+        if (rpc.Api.isSimulationSuccess(result)) {
+            const val = result.result?.retval;
+            if (!val) return null;
+            const raw = scValToNative(val);
+            if (!raw) return null;
+
+            return {
+                strength: Number(raw.strength),
+                agility: Number(raw.agility),
+                intelligence: Number(raw.intelligence),
+                energy: Number(raw.energy),
+                last_update: Number(raw.last_update),
+                wins: Number(raw.wins),
+                losses: Number(raw.losses),
+                gold: Number(raw.gold),
+            } as PetStats;
+        }
+        return null;
+    } catch (e) {
+        console.error("getPetStats error:", e);
+        return null;
+    }
+}
+
 export async function mintPet(ownerAddress: string, name: string): Promise<string> {
     const contract = new Contract(CONTRACT_ID);
     const op = contract.call("mint_pet",
@@ -120,6 +170,48 @@ export async function addXp(ownerAddress: string, amount: number): Promise<strin
 export async function releasePet(ownerAddress: string): Promise<string> {
     const contract = new Contract(CONTRACT_ID);
     const op = contract.call("release_pet",
+        new Address(ownerAddress).toScVal()
+    );
+    return submitTx(ownerAddress, op);
+}
+
+export async function battlePet(ownerAddress: string): Promise<string> {
+    const contract = new Contract(CONTRACT_ID);
+    const op = contract.call("battle",
+        new Address(ownerAddress).toScVal()
+    );
+    return submitTx(ownerAddress, op);
+}
+
+export async function changePetDesign(ownerAddress: string, newDesign: string): Promise<string> {
+    const contract = new Contract(CONTRACT_ID);
+    const op = contract.call("change_design",
+        new Address(ownerAddress).toScVal(),
+        nativeToScVal(newDesign, { type: "string" })
+    );
+    return submitTx(ownerAddress, op);
+}
+
+export async function trainStat(ownerAddress: string, stat: "str" | "agi" | "int"): Promise<string> {
+    const contract = new Contract(CONTRACT_ID);
+    const op = contract.call("train_stat",
+        new Address(ownerAddress).toScVal(),
+        nativeToScVal(stat, { type: "symbol" })
+    );
+    return submitTx(ownerAddress, op);
+}
+
+export async function buyPotion(ownerAddress: string): Promise<string> {
+    const contract = new Contract(CONTRACT_ID);
+    const op = contract.call("buy_potion",
+        new Address(ownerAddress).toScVal()
+    );
+    return submitTx(ownerAddress, op);
+}
+
+export async function buySmallPotion(ownerAddress: string): Promise<string> {
+    const contract = new Contract(CONTRACT_ID);
+    const op = contract.call("buy_small_potion",
         new Address(ownerAddress).toScVal()
     );
     return submitTx(ownerAddress, op);
@@ -170,7 +262,7 @@ async function submitTx(signerAddress: string, operation: xdr.Operation): Promis
     console.log("Submitting transaction...");
     const sendVal = await server.sendTransaction(TransactionBuilder.fromXDR(signedTx.signedTxXdr, NETWORK_PASSPHRASE));
 
-    if (sendVal.status !== "PENDING" && sendVal.status !== "SUCCESS") {
+    if (sendVal.status !== "PENDING") {
         // Detailed error logging
         console.error("Full SendTransaction Response:", JSON.stringify(sendVal, null, 2));
 

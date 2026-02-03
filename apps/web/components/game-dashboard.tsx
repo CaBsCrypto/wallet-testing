@@ -3,11 +3,12 @@
 import { useWallet } from "../hooks/use-wallet";
 import { usePet } from "../hooks/use-pet";
 import { useState } from "react";
-import { PawPrint, Zap, Trophy, Crown } from "lucide-react";
+import { useRef } from "react";
+import { PawPrint, Zap, Trophy, Crown, Dumbbell, Activity, Brain, ShoppingBag, Coins } from "lucide-react";
 
 export function GameDashboard() {
     const { isConnected, connect, address } = useWallet();
-    const { pet, isLoading, error, mint, train, release } = usePet();
+    const { pet, stats, isLoading, error, mint, trainAttribute, battle, evolve, buyEnergyPotion, buySmallEnergyPotion, release } = usePet();
     const [petName, setPetName] = useState("");
     const [lastTx, setLastTx] = useState<string | null>(null);
 
@@ -16,8 +17,33 @@ export function GameDashboard() {
         if (hash) setLastTx(hash);
     };
 
-    const handleTrain = async () => {
-        const hash = await train();
+    // const handleTrain = async () => {
+    //     const hash = await train();
+    //     if (hash) setLastTx(hash);
+    // };
+
+    const handleTrainStats = async (type: "str" | "agi" | "int") => {
+        const hash = await trainAttribute(type);
+        if (hash) setLastTx(hash);
+    }
+
+    const handleBuyPotion = async () => {
+        const hash = await buyEnergyPotion();
+        if (hash) setLastTx(hash);
+    }
+
+    const handleBuySmallPotion = async () => {
+        const hash = await buySmallEnergyPotion();
+        if (hash) setLastTx(hash);
+    }
+
+    const handleBattle = async () => {
+        const hash = await battle();
+        if (hash) setLastTx(hash);
+    };
+
+    const handleEvolve = async () => {
+        const hash = await evolve();
         if (hash) setLastTx(hash);
     };
 
@@ -125,6 +151,46 @@ export function GameDashboard() {
                             </div>
                         </div>
 
+                        {/* Stats & Energy */}
+                        {stats && (
+                            <div className="w-full space-y-4">
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-xs uppercase text-slate-400 font-bold">
+                                        <span>Energy</span>
+                                        <span className={stats.energy < 20 ? "text-red-500" : "text-green-400"}>{stats.energy} / 100</span>
+                                    </div>
+                                    <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                                        <div className="h-full w-full flex-1 bg-green-500 transition-all" style={{ transform: `translateX(-${100 - stats.energy}%)` }}></div>
+                                    </div>
+                                    <div className="flex items-center space-x-1 justify-end pt-1">
+                                        <Coins className="h-4 w-4 text-yellow-500" />
+                                        <span className="text-yellow-400 font-bold">{stats.gold} Gold</span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="flex flex-col items-center bg-slate-800/50 p-2 rounded border border-slate-700">
+                                        <Dumbbell className="h-4 w-4 text-red-400 mb-1" />
+                                        <span className="text-sm font-bold text-slate-200">{stats.strength}</span>
+                                        <span className="text-[10px] text-slate-500 uppercase">STR</span>
+                                    </div>
+                                    <div className="flex flex-col items-center bg-slate-800/50 p-2 rounded border border-slate-700">
+                                        <Activity className="h-4 w-4 text-blue-400 mb-1" />
+                                        <span className="text-sm font-bold text-slate-200">{stats.agility}</span>
+                                        <span className="text-[10px] text-slate-500 uppercase">AGI</span>
+                                    </div>
+                                    <div className="flex flex-col items-center bg-slate-800/50 p-2 rounded border border-slate-700">
+                                        <Brain className="h-4 w-4 text-purple-400 mb-1" />
+                                        <span className="text-sm font-bold text-slate-200">{stats.intelligence}</span>
+                                        <span className="text-[10px] text-slate-500 uppercase">INT</span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between text-xs text-slate-500 px-1">
+                                    <span>Wins: {stats.wins}</span>
+                                    <span>Losses: {stats.losses}</span>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-2 gap-4 w-full">
                             <div className="flex flex-col items-center p-3 bg-slate-800 rounded-lg">
                                 <span className="text-xs text-muted-foreground uppercase text-slate-400">Design</span>
@@ -146,20 +212,107 @@ export function GameDashboard() {
                     <p className="text-sm text-muted-foreground text-slate-400">Interact with your pet</p>
                 </div>
                 <div className="p-6 space-y-4 pt-0">
+                    {/* Training Actions */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <button
+                            className="inline-flex flex-col items-center justify-center p-2 rounded-md transition-colors bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 disabled:opacity-50"
+                            onClick={() => handleTrainStats("str")}
+                            disabled={isLoading || (stats ? stats.energy < 10 : false)}
+                        >
+                            <Dumbbell className="h-5 w-5 mb-1 text-red-500" />
+                            <span className="text-[10px] uppercase font-bold">Strength</span>
+                            <span className="text-[9px] text-slate-500">-10 Energy</span>
+                        </button>
+                        <button
+                            className="inline-flex flex-col items-center justify-center p-2 rounded-md transition-colors bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 disabled:opacity-50"
+                            onClick={() => handleTrainStats("agi")}
+                            disabled={isLoading || (stats ? stats.energy < 10 : false)}
+                        >
+                            <Activity className="h-5 w-5 mb-1 text-blue-500" />
+                            <span className="text-[10px] uppercase font-bold">Agility</span>
+                            <span className="text-[9px] text-slate-500">-10 Energy</span>
+                        </button>
+                        <button
+                            className="inline-flex flex-col items-center justify-center p-2 rounded-md transition-colors bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 disabled:opacity-50"
+                            onClick={() => handleTrainStats("int")}
+                            disabled={isLoading || (stats ? stats.energy < 10 : false)}
+                        >
+                            <Brain className="h-5 w-5 mb-1 text-purple-500" />
+                            <span className="text-[10px] uppercase font-bold">Intellect</span>
+                            <span className="text-[9px] text-slate-500">-10 Energy</span>
+                        </button>
+                    </div>
+
                     <button
-                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-700 text-white"
-                        onClick={handleTrain}
-                        disabled={isLoading}
+                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground w-full bg-transparent border-slate-700 hover:bg-slate-800 text-slate-300 hover:text-white h-12"
+                        onClick={handleBattle}
+                        disabled={isLoading || (stats ? stats.energy < 20 : false)}
                     >
-                        <Zap className="mr-2 h-5 w-5 fill-yellow-400 text-yellow-400" />
-                        Train (+50 XP)
+                        <Trophy className="mr-2 h-4 w-4 text-orange-500" />
+                        <div className="flex flex-col items-start leading-tight">
+                            <span>Battle (Earn Gold + XP)</span>
+                            <span className="text-[10px] text-slate-500">-20 Energy | Win: +15 Gold | Loss: +1 Gold</span>
+                        </div>
                     </button>
 
-                    {/* Future Actions */}
-                    <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground w-full bg-transparent border-slate-700 hover:bg-slate-800 text-slate-300" disabled>
-                        <Trophy className="mr-2 h-4 w-4" />
-                        Battle (Coming Soon)
-                    </button>
+                    {/* Shop */}
+                    {stats && (
+                        <div className="pt-4 border-t border-slate-800">
+                            <div className="flex items-center space-x-2 text-slate-300 mb-2">
+                                <ShoppingBag className="h-4 w-4" />
+                                <h4 className="text-sm font-semibold">Item Shop</h4>
+                            </div>
+                            <div className="space-y-2">
+                                {/* Small Potion */}
+                                <button
+                                    className="inline-flex items-center justify-between w-full p-3 rounded-md bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors border text-slate-200 disabled:opacity-50"
+                                    onClick={handleBuySmallPotion}
+                                    disabled={isLoading || stats.gold < 10}
+                                >
+                                    <div className="flex items-center">
+                                        <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center mr-3 text-lg">🧉</div>
+                                        <div className="flex flex-col items-start">
+                                            <span className="text-sm font-bold">Small Potion</span>
+                                            <span className="text-[10px] text-slate-400">Restore 20 Energy</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center text-yellow-400 font-bold text-sm">
+                                        10 G
+                                    </div>
+                                </button>
+
+                                {/* Max Potion */}
+                                <button
+                                    className="inline-flex items-center justify-between w-full p-3 rounded-md bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors border text-slate-200 disabled:opacity-50"
+                                    onClick={handleBuyPotion}
+                                    disabled={isLoading || stats.gold < 50}
+                                >
+                                    <div className="flex items-center">
+                                        <div className="h-8 w-8 rounded-full bg-pink-500/20 flex items-center justify-center mr-3 text-lg">🧪</div>
+                                        <div className="flex flex-col items-start">
+                                            <span className="text-sm font-bold">Max Potion</span>
+                                            <span className="text-[10px] text-slate-400">Restore 100% Energy</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center text-yellow-400 font-bold text-sm">
+                                        50 G
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Evolve Action */}
+                    {pet.level >= 2 && pet.design === "egg" && (
+                        <button
+                            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full shadow-lg animate-pulse"
+                            onClick={handleEvolve}
+                            disabled={isLoading}
+                        >
+                            <Crown className="mr-2 h-5 w-5 fill-yellow-300 text-yellow-100" />
+                            Evolve to Dragon!
+                        </button>
+                    )}
 
                     {/* Release Pet (Reset) */}
                     <button
