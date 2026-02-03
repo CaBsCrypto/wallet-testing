@@ -1,0 +1,135 @@
+warning: `dev_dependencies` is deprecated in favor of `dev-dependencies` and will not work in the 2024 edition
+(in the `pet_contract` package)
+   Compiling serde_derive v1.0.192
+   Compiling darling_core v0.20.10
+   Compiling thiserror-impl v1.0.55
+   Compiling zerocopy-derive v0.7.35
+   Compiling paste v1.0.15
+   Compiling num-derive v0.4.1
+   Compiling indexmap v1.9.3
+    Checking elliptic-curve v0.13.8
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.6
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling num-integer v0.1.45
+    Checking wasmi_core v0.13.0
+    Checking zerocopy v0.7.35
+    Checking wasmi_arena v0.4.1
+   Compiling prettyplease v0.2.15
+    Checking base64 v0.13.1
+    Checking spin v0.9.8
+   Compiling thiserror v1.0.55
+    Checking escape-bytes v0.1.1
+    Checking smallvec v1.15.1
+    Checking curve25519-dalek v4.1.2
+   Compiling digest v0.10.7
+    Checking ecdsa v0.16.9
+    Checking soroban-wasmi v0.31.1-soroban.20.0.1
+    Checking ppv-lite86 v0.2.20
+   Compiling wasmparser v0.88.0
+    Checking ed25519 v2.2.3
+    Checking rand_chacha v0.3.1
+   Compiling num-bigint v0.4.4
+    Checking static_assertions v1.1.0
+   Compiling soroban-env-host v20.3.0
+    Checking ethnum v1.5.0
+    Checking keccak v0.1.5
+    Checking once_cell v1.21.3
+   Compiling cfg-if v1.0.4
+   Compiling darling_macro v0.20.10
+   Compiling cpufeatures v0.2.17
+   Compiling sha2 v0.10.8
+    Checking ed25519-dalek v2.0.0
+    Checking k256 v0.13.1
+    Checking sha3 v0.10.8
+   Compiling darling v0.20.10
+    Checking rand v0.8.5
+   Compiling serde v1.0.192
+   Compiling serde_with_macros v3.12.0
+   Compiling soroban-builtin-sdk-macros v20.3.0
+    Checking hex-literal v0.4.1
+    Checking itoa v1.0.17
+    Checking ryu v1.0.22
+    Checking hex v0.4.3
+    Checking serde_json v1.0.108
+    Checking serde_with v3.12.0
+   Compiling bytes-lit v0.0.5
+   Compiling crate-git-revision v0.0.6
+   Compiling stellar-strkey v0.0.8
+   Compiling stellar-xdr v20.1.0
+   Compiling soroban-env-common v20.3.0
+   Compiling soroban-sdk-macros v20.5.0
+   Compiling soroban-spec v20.5.0
+   Compiling soroban-spec-rust v20.5.0
+   Compiling soroban-env-macros v20.3.0
+    Checking soroban-ledger-snapshot v20.5.0
+    Checking soroban-sdk v20.5.0
+    Checking pet_contract v0.1.0 (D:\00 PROGRAMANDO\wallet-testing\packages\contracts)
+warning: unexpected `cfg` condition value: `testutils`
+ --> src\lib.rs:4:1
+  |
+4 | #[contracttype]
+  | ^^^^^^^^^^^^^^^
+  |
+  = note: no expected values for `feature`
+  = note: using a cfg inside a attribute macro will use the cfgs from the destination crate and not the ones from the defining crate
+  = help: try referring to `contracttype` crate for guidance on how handle this unexpected cfg
+  = help: the attribute macro `contracttype` may come from an old version of the `soroban_sdk_macros` crate, try updating your dependency with `cargo update -p soroban_sdk_macros`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+  = note: `#[warn(unexpected_cfgs)]` on by default
+  = note: this warning originates in the attribute macro `contracttype` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition value: `testutils`
+  --> src\lib.rs:14:1
+   |
+14 | #[contracttype]
+   | ^^^^^^^^^^^^^^^
+   |
+   = note: no expected values for `feature`
+   = note: using a cfg inside a attribute macro will use the cfgs from the destination crate and not the ones from the defining crate
+   = help: try referring to `contracttype` crate for guidance on how handle this unexpected cfg
+   = help: the attribute macro `contracttype` may come from an old version of the `soroban_sdk_macros` crate, try updating your dependency with `cargo update -p soroban_sdk_macros`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+   = note: this warning originates in the attribute macro `contracttype` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition value: `testutils`
+  --> src\lib.rs:19:1
+   |
+19 | #[contract]
+   | ^^^^^^^^^^^
+   |
+   = note: no expected values for `feature`
+   = note: using a cfg inside a attribute macro will use the cfgs from the destination crate and not the ones from the defining crate
+   = help: try referring to `contract` crate for guidance on how handle this unexpected cfg
+   = help: the attribute macro `contract` may come from an old version of the `soroban_sdk_macros` crate, try updating your dependency with `cargo update -p soroban_sdk_macros`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+   = note: this warning originates in the attribute macro `contract` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition value: `testutils`
+  --> src\lib.rs:22:1
+   |
+22 | #[contractimpl]
+   | ^^^^^^^^^^^^^^^
+   |
+   = note: no expected values for `feature`
+   = note: using a cfg inside a attribute macro will use the cfgs from the destination crate and not the ones from the defining crate
+   = help: try referring to `contractimpl` crate for guidance on how handle this unexpected cfg
+   = help: the attribute macro `contractimpl` may come from an old version of the `soroban_sdk_macros` crate, try updating your dependency with `cargo update -p soroban_sdk_macros`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+   = note: this warning originates in the attribute macro `contractimpl` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition value: `testutils`
+  --> src\lib.rs:22:1
+   |
+22 | #[contractimpl]
+   | ^^^^^^^^^^^^^^^
+   |
+   = note: no expected values for `feature`
+   = note: using a cfg inside a attribute macro will use the cfgs from the destination crate and not the ones from the defining crate
+   = help: try referring to `soroban_sdk::contractclient` crate for guidance on how handle this unexpected cfg
+   = help: the attribute macro `soroban_sdk::contractclient` may come from an old version of the `soroban_sdk_macros` crate, try updating your dependency with `cargo update -p soroban_sdk_macros`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+   = note: this warning originates in the attribute macro `soroban_sdk::contractclient` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: `pet_contract` (lib) generated 5 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 38.34s
