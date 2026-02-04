@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contracttype, contractimpl, symbol_short, Env, String, Address, Symbol};
+use soroban_sdk::{contract, contracttype, contractimpl, symbol_short, Env, String, Address, Symbol, Vec};
 
 #[contracttype]
 #[derive(Clone)]
@@ -78,8 +78,22 @@ impl PetRegistry {
             birth_date: env.ledger().timestamp(),
             level: 1,
             xp: 0,
-            design: String::from_str(&env, "egg"), // Default starting design
+            design: String::from_str(&env, "egg"),
         };
+
+        // Initialize Stats
+        let stats = PetStats {
+            strength: 1,
+            agility: 1,
+            intelligence: 1,
+            energy: 100, // Default Energy
+            last_update: env.ledger().timestamp(),
+            wins: 0,
+            losses: 0,
+            gold: 0,
+        };
+        let stats_key = DataKey::Stats(owner.clone());
+        env.storage().persistent().set(&stats_key, &stats);
 
         env.storage().persistent().set(&key, &pet);
         
@@ -297,21 +311,22 @@ impl PetRegistry {
         }
     }
 
-    pub fn battle(env: Env, owner: Address) -> Symbol {
+    pub fn battle(env: Env, owner: Address, move_choice: Symbol) -> Symbol {
         if Self::is_paused(env.clone()) {
             panic!("Contract is paused");
         }
 
         owner.require_auth();
 
-        let mut stats = Self::get_stats(env.clone(), owner.clone()); // This gets updated view
-        // Need to re-read to get mutable access only if we didn't just return it, 
-        // actually get_stats returns a value, we can use it but we need to fetch 'real' storage to save?
-        // Let's just do the fetch pattern again to be safe and simple.
-        
+        // Validate Move
+        if move_choice != symbol_short!("Fire") && 
+           move_choice != symbol_short!("Water") && 
+           move_choice != symbol_short!("Grass") {
+            panic!("Invalid move");
+        }
+
+        let mut stats = Self::get_stats(env.clone(), owner.clone());
         let stats_key = DataKey::Stats(owner.clone());
-        // Reload raw to be sure (or just trust get_stats logic which constructs default)
-        // Optimization: Just use the 'stats' variable we got and save it at the end.
         
         if stats.energy < 20 {
             panic!("Not enough energy");
@@ -320,25 +335,50 @@ impl PetRegistry {
 
         let key = DataKey::Pet(owner.clone());
         if let Some(mut pet) = env.storage().persistent().get::<DataKey, Pet>(&key) {
-            // Battle Logic with Stats
-            // Base win chance 40% + (Strength * 5)%
-            // Capped at 90%
-            let win_chance = 40 + (stats.strength as u64 * 5);
-            let win_chance = win_chance.min(90);
-
-            let time = env.ledger().timestamp();
-            let rand = time % 100; // 0-99
             
-            let is_win = rand < win_chance;
+            // CPU Move Logic
+            let time = env.ledger().timestamp();
+            let rand = time % 3; // 0, 1, 2
+            let cpu_move = match rand {
+                0 => symbol_short!("Fire"),
+                1 => symbol_short!("Water"),
+                _ => symbol_short!("Grass"),
+            };
 
-            let xp_gain = if is_win { 
-                stats.wins += 1;
-                stats.gold += 15; // Win Reward
-                20 + (stats.intelligence as u64) // Int bonus to XP
-            } else { 
-                stats.losses += 1;
-                stats.gold += 1; // Pity Reward
-                5 
+            // Determine Outcome
+            // 0: Draw, 1: Win, 2: Loss
+            let outcome = if move_choice == cpu_move {
+                0 
+            } else if (move_choice == symbol_short!("Fire") && cpu_move == symbol_short!("Grass")) ||
+                      (move_choice == symbol_short!("Grass") && cpu_move == symbol_short!("Water")) ||
+                      (move_choice == symbol_short!("Water") && cpu_move == symbol_short!("Fire")) {
+                1
+            } else {
+                2
+            };
+
+            let result_symbol = match outcome {
+                0 => symbol_short!("Draw"),
+                1 => symbol_short!("Win"),
+                _ => symbol_short!("Loss"),
+            };
+
+            // Rewards
+            let xp_gain = match outcome {
+                0 => { // Draw
+                    stats.gold += 5; // Small gold for draw
+                    10 // Small XP
+                },
+                1 => { // Win
+                    stats.wins += 1;
+                    stats.gold += 25; // Good gold for win
+                    30 + (stats.intelligence as u64) // XP Bonus
+                },
+                _ => { // Loss
+                    stats.losses += 1;
+                    stats.gold += 1; // Pity
+                    5
+                }
             };
             
             pet.xp += xp_gain;
@@ -353,15 +393,133 @@ impl PetRegistry {
             env.storage().persistent().set(&key, &pet);
             env.storage().persistent().set(&stats_key, &stats);
 
-            if is_win {
-                env.events().publish((symbol_short!("battle"), owner), symbol_short!("win"));
-                symbol_short!("win")
-            } else {
-                 env.events().publish((symbol_short!("battle"), owner), symbol_short!("loss"));
-                 symbol_short!("loss")
-            }
+            // Publish detailed event: (UserMove, CpuMove, Result)
+            env.events().publish((symbol_short!("battle"), owner), (move_choice, cpu_move, result_symbol.clone()));
+            
+            result_symbol
         } else {
             panic!("No pet found");
         }
+    }
+
+    // Batch Hunt: Accepts multiple moves (0-8)
+    // Returns a list of results (symbols)
+    pub fn play_hunt(env: Env, owner: Address, moves: Vec<u32>) -> Vec<Symbol> {
+        if Self::is_paused(env.clone()) {
+            panic!("Contract is paused");
+        }
+        owner.require_auth();
+
+        if moves.len() > 9 {
+             panic!("Too many moves");
+        }
+        if moves.len() == 0 {
+             panic!("No moves provided");
+        }
+
+        let mut stats = Self::get_stats(env.clone(), owner.clone());
+        let stats_key = DataKey::Stats(owner.clone());
+        
+        let cost = 5 * moves.len() as u32;
+        if stats.energy < cost {
+             panic!("Not enough energy");
+        }
+        stats.energy -= cost;
+
+        let mut results = Vec::new(&env);
+        let time = env.ledger().timestamp();
+        let seq = env.ledger().sequence();
+        
+        // Iterate moves
+        for move_idx in moves.iter() {
+             // Unique entropy per move: Time + Seq + MoveIndex
+             // Fix: wrapping_mul(100) caused result % 100 to always be 0 (Trap).
+             // Using LCG constants for better pseudo-randomness.
+             let entropy = time.wrapping_add(seq as u64).wrapping_add(move_idx as u64)
+                .wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+             let rand = entropy % 100;
+
+             let outcome = if rand < 10 {
+                symbol_short!("trap")
+            } else if rand < 90 { // DEBUG: High Gem Chance
+                symbol_short!("gem")
+            } else {
+                symbol_short!("dust")
+            };
+            
+            if outcome == symbol_short!("trap") {
+                // No Reward
+            } else if outcome == symbol_short!("gem") {
+                stats.gold += 1000; // MASSIVE DEBUG REWARD
+                env.events().publish((symbol_short!("dbg_gold"), owner.clone()), stats.gold); // Verify new balance
+            } else { // dust
+                // XP Logic
+                let key = DataKey::Pet(owner.clone());
+                if let Some(mut pet) = env.storage().persistent().get::<DataKey, Pet>(&key) {
+                    pet.xp += 100; // MASSIVE DEBUG XP (Was 2)
+                    // Check Level Up
+                    let xp_needed = pet.level as u64 * 100;
+                    if pet.xp >= xp_needed {
+                        pet.level += 1;
+                        pet.xp = pet.xp - xp_needed;
+                        env.events().publish((symbol_short!("level_up"), owner.clone()), pet.level);
+                    }
+                    env.storage().persistent().set(&key, &pet);
+                }
+            }
+            results.push_back(outcome);
+        }
+
+        env.storage().persistent().set(&stats_key, &stats);
+        env.events().publish((symbol_short!("hunt"), owner), results.clone());
+        results
+    }
+
+    pub fn submit_game_score(env: Env, owner: Address, score: u32, game_id: Symbol) -> Vec<Symbol> {
+        owner.require_auth();
+        let stats_key = DataKey::Stats(owner.clone());
+        let mut stats = env.storage().persistent().get::<DataKey, PetStats>(&stats_key).expect("No stats found");
+
+        if stats.energy < 20 {
+            panic!("Not enough energy");
+        }
+        stats.energy -= 20;
+
+        // Reward Calculation
+        // Gold: Score / 100
+        let mut gold_reward = score / 100;
+        
+        // XP: Score / 50
+        let xp_reward = (score / 50) as u64; // XP is u64
+
+        // 2048 Bonus
+        if game_id == symbol_short!("2048") && score >= 2048 {
+             gold_reward += 500;
+        }
+
+        stats.gold += gold_reward;
+        
+        // Update XP (Load Pet main data)
+        let key = DataKey::Pet(owner.clone());
+        if let Some(mut pet) = env.storage().persistent().get::<DataKey, Pet>(&key) {
+            pet.xp += xp_reward;
+             // Check Level Up
+            let xp_needed = pet.level as u64 * 100;
+            if pet.xp >= xp_needed {
+                pet.level += 1;
+                pet.xp = pet.xp - xp_needed;
+                env.events().publish((symbol_short!("level_up"), owner.clone()), pet.level);
+            }
+            env.storage().persistent().set(&key, &pet);
+        }
+
+        env.storage().persistent().set(&stats_key, &stats);
+        env.events().publish((symbol_short!("game_end"), owner), (game_id, score, gold_reward));
+        
+        // Return results as symbols for UI to parse? Or just Vec.
+        // Actually void is fine, events handle it. But let's return a simple confirmation.
+        let mut result = Vec::new(&env);
+        result.push_back(symbol_short!("success"));
+        result
     }
 }

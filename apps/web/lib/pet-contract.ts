@@ -12,10 +12,23 @@ import {
 
 // import { signTransaction } from '@stellar/freighter-api'; // Removed static import
 
-const CONTRACT_ID = "CDISG7H5K6UATT4P2OUHOZ7X6Y7UEJ2YEHRADY55QD2YF4RRQGQNBXC5";
+const CONTRACT_ID = "CBO3K25CONABBA7L3KZNT2Q3L6WCZGWF42BAANGH22BDX5657QQLYHKR";
+
+// ... existing code ...
+
+export async function submitGameScore(ownerAddress: string, score: number, gameId: string): Promise<string> {
+    console.log("Calling submit_game_score with:", { ownerAddress, score, gameId, contract: CONTRACT_ID });
+    const contract = new Contract(CONTRACT_ID);
+    const op = contract.call("submit_game_score",
+        new Address(ownerAddress).toScVal(),
+        nativeToScVal(score, { type: "u32" }), // Changed to u32
+        nativeToScVal(gameId, { type: "symbol" })
+    );
+    return submitTx(ownerAddress, op);
+}
+
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPHRASE = Networks.TESTNET;
-
 const server = new rpc.Server(RPC_URL);
 
 export interface Pet {
@@ -124,8 +137,12 @@ export async function getPetStats(ownerAddress: string): Promise<PetStats | null
 
         if (rpc.Api.isSimulationSuccess(result)) {
             const val = result.result?.retval;
-            if (!val) return null;
+            if (!val) {
+                console.warn("getPetStats: No retval in simulation result");
+                return null;
+            }
             const raw = scValToNative(val);
+            console.log("getPetStats Raw:", raw); // Debug Log
             if (!raw) return null;
 
             return {
@@ -175,11 +192,28 @@ export async function releasePet(ownerAddress: string): Promise<string> {
     return submitTx(ownerAddress, op);
 }
 
-export async function battlePet(ownerAddress: string): Promise<string> {
+// 1: Win, 2: Loss, 0: Draw
+export async function battlePet(ownerAddress: string, move: "Fire" | "Water" | "Grass"): Promise<string> {
     const contract = new Contract(CONTRACT_ID);
     const op = contract.call("battle",
-        new Address(ownerAddress).toScVal()
+        new Address(ownerAddress).toScVal(),
+        nativeToScVal(move, { type: "symbol" })
     );
+    return submitTx(ownerAddress, op);
+}
+
+// Hunt Result: returns array of symbols
+export async function playCryptoHunt(ownerAddress: string, moves: number[]): Promise<string> {
+    const contract = new Contract(CONTRACT_ID);
+    const op = contract.call("play_hunt",
+        new Address(ownerAddress).toScVal(),
+        xdr.ScVal.scvVec(
+            moves.map(m => nativeToScVal(m, { type: "u32" }))
+        )
+    );
+    // SDK uses ScVal for arrays differently? Let's check docs or use nativeToScVal which handles arrays.
+    // nativeToScVal([1, 2], { type: "vec" }) is typical?
+    // Actually, passing array to nativeToScVal usually works automagically for Vec.
     return submitTx(ownerAddress, op);
 }
 
@@ -237,12 +271,22 @@ async function submitTx(signerAddress: string, operation: xdr.Operation): Promis
         console.error("Simulation failed (json):", JSON.stringify(simulation, null, 2));
         // Try to extract extra info if available
         if ((simulation as any).events) {
-            console.error("Simulation events:", JSON.stringify((simulation as any).events, null, 2));
+            // events is array of strings or objects. Try to find log events.
+            const events = (simulation as any).events;
+            console.error("Simulation events:", JSON.stringify(events, null, 2));
+            // Check for panic/abort events
         }
+
+        // Try to get a readable error
+        let errorDetail = "Unknown Simulation Error";
         if ((simulation as any).error) {
-            console.error("Simulation error string:", (simulation as any).error);
+            errorDetail = (simulation as any).error; // Often a string "HostError: ..."
+        } else if (typeof simulation === 'string') {
+            errorDetail = simulation;
         }
-        throw new Error("Transaction simulation failed. Check console for details.");
+
+        console.error(`Simulation failed details: ${errorDetail}`);
+        throw new Error(`Transaction simulation failed: ${errorDetail}`);
     }
 
     // Prepare transaction (append Soroban data)

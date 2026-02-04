@@ -4,12 +4,19 @@ import { useWallet } from "../hooks/use-wallet";
 import { usePet } from "../hooks/use-pet";
 import { useState } from "react";
 import { useRef } from "react";
-import { PawPrint, Zap, Trophy, Crown, Dumbbell, Activity, Brain, ShoppingBag, Coins } from "lucide-react";
+import { PawPrint, Zap, Trophy, Crown, Dumbbell, Activity, Brain, ShoppingBag, Coins, Flame, Droplets, Leaf, Search, Gem, Skull, Wind, Grid3X3 } from "lucide-react";
+import { Game2048 } from "./game-2048";
+import { GamePool } from "./game-pool";
 
 export function GameDashboard() {
     const { isConnected, connect, address } = useWallet();
-    const { pet, stats, isLoading, error, mint, trainAttribute, battle, evolve, buyEnergyPotion, buySmallEnergyPotion, release } = usePet();
+    const { pet, stats, isLoading, error, mint, trainAttribute, battle, hunt, evolve, buyEnergyPotion, buySmallEnergyPotion, release, submitScore } = usePet();
     const [petName, setPetName] = useState("");
+    const [huntGrid, setHuntGrid] = useState<Array<{ revealed: boolean, selected: boolean, content: 'gem' | 'trap' | 'dust' | null }>>(Array(9).fill({ revealed: false, selected: false, content: null }));
+    const [isHunting, setIsHunting] = useState(false);
+    const [activeGame, setActiveGame] = useState<'arena' | 'hunt' | '2048' | 'pool'>('arena');
+    const [selectedDesign, setSelectedDesign] = useState("dragon");
+    const PetDesigns = ["dragon", "phoenix", "golem", "spirit"];
     const [lastTx, setLastTx] = useState<string | null>(null);
 
     const handleMint = async () => {
@@ -37,13 +44,151 @@ export function GameDashboard() {
         if (hash) setLastTx(hash);
     }
 
-    const handleBattle = async () => {
-        const hash = await battle();
+    const handleBattle = async (move: "Fire" | "Water" | "Grass") => {
+        const hash = await battle(move);
         if (hash) setLastTx(hash);
     };
 
-    const handleEvolve = async () => {
-        const hash = await evolve();
+    const MAX_SELECTION = 3;
+
+    const handleGame2048Over = async (score: number) => {
+        if (score === 0) return;
+
+        if (stats && stats.energy < 20) {
+            alert(`Game Over! Score: ${score}\n\n⚠️ Not enough Energy (20 required) to claim rewards.\nBuy a potion and try again!`);
+            return;
+        }
+
+        const hash = await submitScore(score, "2048");
+        if (hash) {
+            setLastTx(hash);
+            alert(`Game Over! Score: ${score}\n\nSubmitting to contract... Rewards will appear shortly!`);
+        }
+    };
+
+    const toggleTileSelection = (index: number) => {
+        if (isHunting || huntGrid[index].revealed) return;
+
+        const newGrid = [...huntGrid];
+        const isSelected = newGrid[index].selected;
+        const currentSelected = newGrid.filter(c => c.selected).length;
+
+        if (!isSelected && currentSelected >= MAX_SELECTION) {
+            // Optional: Add a shake effect or toast here
+            return;
+        }
+
+        const cell = { ...newGrid[index], selected: !isSelected };
+        newGrid[index] = cell;
+        setHuntGrid(newGrid);
+    }
+
+    // Calculate total energy cost based on selected tiles
+    const selectedCount = huntGrid.filter(c => c.selected).length;
+    const huntCost = selectedCount * 5;
+
+    const handleBatchHunt = async () => {
+        if (!stats) return;
+
+        const selectedIndices = huntGrid.map((cell, idx) => cell.selected ? idx : -1).filter(idx => idx !== -1);
+        console.log("Starting Batch Hunt with", selectedIndices);
+
+        if (selectedIndices.length === 0) return;
+        if (stats.energy < huntCost) {
+            alert("Not enough energy!");
+            return;
+        }
+
+        setIsHunting(true);
+
+        try {
+            // Call contract with array of indices
+            console.log("Calling contract...");
+            const hash = await hunt(selectedIndices);
+            console.log("Tx Hash:", hash);
+
+            if (hash) {
+                setLastTx(hash);
+
+                // Wait a moment for the chain to update, then fetch new stats
+                // We need to wait because the node might be slightly behind the tx confirmation
+                setTimeout(async () => {
+                    // Fetch fresh stats to see the TRUE result
+                    // We can't use the simple 'stats' variable here because it's from the render cycle
+                    // We need to fetch from chain again. 
+                    // However, usePet hook does this automatically every 4s, or we can trigger it.
+                    // Let's rely on the fact that usePet will update 'stats' soon.
+                    // But to show the IMMEDIATE summary, we must wait for that update.
+
+                    // Actually, a safer way for the MVP is to just tell the user to check their balance,
+                    // OR we can guess the visual but warn them it's a "simulation".
+
+                    // BUT, the user explicitly complained about the mismatch.
+                    // So we MUST NOT show a fake result that implies a specific reward.
+
+                    // Alternative: Show "Result: Transaction Confirmed!" and reveal the tiles as "Mined" (generic),
+                    // then let the balance update speak for itself.
+
+                    // Better: Reveal "Unknown" or just "Revealed" until we can verify?
+                    // No, that's boring.
+
+                    // Let's try to simulate the result LOCALLY using the same math if possible?
+                    // No, we don't have the Ledger Sequence.
+
+                    // BEST UX: Assume the user wants to see *something*.
+                    // We will show the "Simulated" results but add a disclaimer:
+                    // "Network validating archeology results... Balance will update shortly."
+
+                    // Wait! usage of `nativeToScVal` for the vector might have been the fix for functioning,
+                    // but the "missing gold" is definitely the random mismatch.
+
+                    // Let's calculate the result based on the stats difference if we can trigger a refetch.
+                    // But we can't await strict refetch easily here in the event handler without exposing `fetchPet`.
+                    // The `hunt` function in `usePet` calls `fetchPet` after 4000ms.
+
+                    // Let's update the alert to be honest.
+                    const newGrid = [...huntGrid];
+                    selectedIndices.forEach(idx => {
+                        // We genuinely don't know the result yet. 
+                        // Show a question mark or a "checked" state? 
+                        // Let's just randomize it but say "Possible result"
+                        // OR, just simply don't show specific gems/traps, just "Revealed".
+                        // This might be disappointing but accurate.
+
+                        // Let's try the "Honest Delta" approach if we were inside the hook.
+                        // Since we are outside, let's just show a successful "Dig" message.
+
+                        // "Digging successful! Check your balance for Gems (Gold) or Dust (XP)."
+                        newGrid[idx] = { ...newGrid[idx], revealed: true, selected: false, content: null };
+                        // Content null removes the icon. use a new 'checked' content?
+                    });
+                    setHuntGrid(newGrid);
+
+                    alert("Digging Successful!\n\nCheck your Gold and XP balance to see what you found!");
+                }, 1000);
+
+            } else {
+                console.error("Hunt returned null hash");
+                alert("Transaction failed to start.");
+            }
+        } catch (e) {
+            console.error("Hunt Error:", e);
+            alert("Error: " + e);
+        } finally {
+            setIsHunting(false);
+        }
+    }
+
+    const resetHunt = () => {
+        setHuntGrid(Array(9).fill({ revealed: false, selected: false, content: null }));
+    }
+
+
+
+
+
+    const handleEvolve = async (design: string) => {
+        const hash = await evolve(design);
         if (hash) setLastTx(hash);
     };
 
@@ -243,17 +388,159 @@ export function GameDashboard() {
                         </button>
                     </div>
 
-                    <button
-                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground w-full bg-transparent border-slate-700 hover:bg-slate-800 text-slate-300 hover:text-white h-12"
-                        onClick={handleBattle}
-                        disabled={isLoading || (stats ? stats.energy < 20 : false)}
-                    >
-                        <Trophy className="mr-2 h-4 w-4 text-orange-500" />
-                        <div className="flex flex-col items-start leading-tight">
-                            <span>Battle (Earn Gold + XP)</span>
-                            <span className="text-[10px] text-slate-500">-20 Energy | Win: +15 Gold | Loss: +1 Gold</span>
+                    {/* Game Tabs */}
+                    <div className="pt-4 border-t border-slate-800">
+                        <div className="flex space-x-2 bg-slate-800/50 p-1 rounded-lg mb-4">
+                            <button
+                                onClick={() => setActiveGame('arena')}
+                                className={`flex-1 flex items-center justify-center py-2 text-xs font-bold uppercase rounded-md transition-all ${activeGame === 'arena'
+                                    ? 'bg-slate-700 text-white shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                            >
+                                <Trophy className="h-3 w-3 mr-1" />
+                                Battle Arena
+                            </button>
+                            <button
+                                onClick={() => setActiveGame('hunt')}
+                                className={`flex-1 flex items-center justify-center py-2 text-xs font-bold uppercase rounded-md transition-all ${activeGame === 'hunt'
+                                    ? 'bg-slate-700 text-white shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                            >
+                                <Search className="h-3 w-3 mr-1" />
+                                Crypto Hunt
+                            </button>
+                            <button
+                                onClick={() => setActiveGame('2048')}
+                                className={`flex-1 flex items-center justify-center py-2 text-xs font-bold uppercase rounded-md transition-all ${activeGame === '2048'
+                                    ? 'bg-slate-700 text-white shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                            >
+                                <Grid3X3 className="h-3 w-3 mr-1" />
+                                2048
+                            </button>
+                            <button
+                                onClick={() => setActiveGame('pool')}
+                                className={`flex-1 flex items-center justify-center py-2 text-xs font-bold uppercase rounded-md transition-all ${activeGame === 'pool'
+                                    ? 'bg-slate-700 text-white shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                            >
+                                <Zap className="h-3 w-3 mr-1" />
+                                Pool
+                            </button>
                         </div>
-                    </button>
+
+                        {/* Pool Game */}
+                        {activeGame === 'pool' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <GamePool />
+                            </div>
+                        )}
+
+                        {/* 2048 Game */}
+                        {activeGame === '2048' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="text-center mb-3">
+                                    <h4 className="text-sm font-semibold text-slate-300">2048 Puzzle</h4>
+                                    <p className="text-xs text-slate-500">Combine tiles to reach 2048! (Cost: 20 Energy)</p>
+                                </div>
+                                <Game2048 onGameOver={handleGame2048Over} isActive={activeGame === '2048'} />
+                            </div>
+                        )}
+
+                        {/* Battle Arena */}
+                        {activeGame === 'arena' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="text-center mb-3">
+                                    <h4 className="text-sm font-semibold text-slate-300">Elemental Battle</h4>
+                                    <p className="text-xs text-slate-500">Choose your element to defeat the enemy!</p>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <button
+                                        className="inline-flex flex-col items-center justify-center p-3 rounded-md transition-colors bg-red-900/20 hover:bg-red-900/40 border border-red-900/50 text-red-200 disabled:opacity-50"
+                                        onClick={() => handleBattle("Fire")}
+                                        disabled={isLoading || (stats ? stats.energy < 20 : false)}
+                                    >
+                                        <Flame className="h-6 w-6 mb-2 text-red-500" />
+                                        <span className="text-xs font-bold uppercase">Fire</span>
+                                    </button>
+                                    <button
+                                        className="inline-flex flex-col items-center justify-center p-3 rounded-md transition-colors bg-blue-900/20 hover:bg-blue-900/40 border border-blue-900/50 text-blue-200 disabled:opacity-50"
+                                        onClick={() => handleBattle("Water")}
+                                        disabled={isLoading || (stats ? stats.energy < 20 : false)}
+                                    >
+                                        <Droplets className="h-6 w-6 mb-2 text-blue-500" />
+                                        <span className="text-xs font-bold uppercase">Water</span>
+                                    </button>
+                                    <button
+                                        className="inline-flex flex-col items-center justify-center p-3 rounded-md transition-colors bg-green-900/20 hover:bg-green-900/40 border border-green-900/50 text-green-200 disabled:opacity-50"
+                                        onClick={() => handleBattle("Grass")}
+                                        disabled={isLoading || (stats ? stats.energy < 20 : false)}
+                                    >
+                                        <Leaf className="h-6 w-6 mb-2 text-green-500" />
+                                        <span className="text-xs font-bold uppercase">Grass</span>
+                                    </button>
+                                </div>
+                                <div className="mt-3 text-center">
+                                    <span className="text-[10px] text-slate-500 bg-slate-800/50 px-2 py-1 rounded">-20 Energy | Win: +25 Gold | Loss: +1 Gold | (Draw: Refund)</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Crypto Hunt Minigame */}
+                        {activeGame === 'hunt' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-slate-300">Treasure Dig</h4>
+                                        <p className="text-xs text-slate-500">Find gems, avoid traps!</p>
+                                    </div>
+                                    <button onClick={resetHunt} className="text-[10px] text-slate-500 hover:text-slate-300 underline">Reset Board</button>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2">
+                                    {huntGrid.map((cell, idx) => (
+                                        <button
+                                            key={idx}
+                                            className={`h-12 rounded-md border flex items-center justify-center transition-all ${cell.revealed
+                                                ? 'bg-slate-900 border-slate-800'
+                                                : cell.selected
+                                                    ? 'bg-purple-900/50 border-purple-500' // Selected State
+                                                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700'
+                                                }`}
+                                            onClick={() => !cell.revealed && toggleTileSelection(idx)}
+                                            disabled={isLoading || isHunting || cell.revealed}
+                                        >
+                                            {cell.revealed ? (
+                                                <>
+                                                    {cell.content === 'gem' && <Gem className="h-5 w-5 text-cyan-400 animate-bounce" />}
+                                                    {cell.content === 'trap' && <Skull className="h-5 w-5 text-red-600 animate-pulse" />}
+                                                    {cell.content === 'dust' && <Wind className="h-5 w-5 text-slate-500" />}
+                                                </>
+                                            ) : cell.selected ? (
+                                                <div className="h-4 w-4 rounded-full bg-purple-500 animate-pulse"></div>
+                                            ) : (
+                                                <div className="h-2 w-2 rounded-full bg-slate-600/50"></div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="mt-3 flex items-center justify-between bg-slate-800/50 px-3 py-2 rounded">
+                                    <span className="text-[10px] text-slate-400">Cost: {huntCost} Energy</span>
+                                    <button
+                                        className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                        onClick={handleBatchHunt}
+                                        disabled={selectedCount === 0 || isLoading || isHunting || (stats ? stats.energy < huntCost : false)}
+                                    >
+                                        {isLoading ? "Digging..." : `Reveal (${selectedCount})`}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Shop */}
                     {stats && (
@@ -303,15 +590,28 @@ export function GameDashboard() {
                     )}
 
                     {/* Evolve Action */}
-                    {pet.level >= 2 && pet.design === "egg" && (
-                        <button
-                            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full shadow-lg animate-pulse"
-                            onClick={handleEvolve}
-                            disabled={isLoading}
-                        >
-                            <Crown className="mr-2 h-5 w-5 fill-yellow-300 text-yellow-100" />
-                            Evolve to Dragon!
-                        </button>
+                    {pet.level >= 2 && PetDesigns.includes(pet.design) === false && (
+                        <div className="space-y-2 mt-4">
+                            <label className="text-sm font-medium text-slate-400">Select Evolution Form:</label>
+                            <select
+                                className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white"
+                                onChange={(e) => setSelectedDesign(e.target.value)}
+                            >
+                                <option value="dragon">Dragon (Classic)</option>
+                                <option value="phoenix">Phoenix (Fire)</option>
+                                <option value="golem">Golem (Earth)</option>
+                                <option value="spirit">Spirit (Water)</option>
+                            </select>
+
+                            <button
+                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full shadow-lg animate-pulse"
+                                onClick={() => handleEvolve(selectedDesign || "dragon")}
+                                disabled={isLoading}
+                            >
+                                <Crown className="mr-2 h-5 w-5 fill-yellow-300 text-yellow-100" />
+                                Evolve!
+                            </button>
+                        </div>
                     )}
 
                     {/* Release Pet (Reset) */}

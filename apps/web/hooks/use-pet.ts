@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from './use-wallet';
-import { getPet, mintPet, addXp, battlePet, changePetDesign, getPetStats, trainStat, buyPotion, buySmallPotion, Pet, PetStats } from '../lib/pet-contract';
+import { getPet, mintPet, addXp, battlePet, changePetDesign, getPetStats, trainStat, buyPotion, buySmallPotion, playCryptoHunt, submitGameScore, Pet, PetStats } from '../lib/pet-contract';
 
 export function usePet() {
     const { address, isConnected } = useWallet();
@@ -71,12 +71,12 @@ export function usePet() {
         }
     };
 
-    const battle = async () => {
+    const battle = async (move: "Fire" | "Water" | "Grass") => {
         if (!address) return;
         setIsLoading(true);
         setError(null);
         try {
-            const txHash = await battlePet(address);
+            const txHash = await battlePet(address, move);
             setTimeout(() => fetchPet(), 4000);
             return txHash;
         } catch (err: any) {
@@ -87,12 +87,12 @@ export function usePet() {
         }
     };
 
-    const evolve = async () => {
+    const evolve = async (design: string) => {
         if (!address) return;
         setIsLoading(true);
         setError(null);
         try {
-            const txHash = await changePetDesign(address, "dragon");
+            const txHash = await changePetDesign(address, design);
             setTimeout(() => fetchPet(), 4000);
             return txHash;
         } catch (err: any) {
@@ -168,6 +168,42 @@ export function usePet() {
         }
     };
 
+    const hunt = async (moves: number[]) => {
+        if (!address) return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const txHash = await playCryptoHunt(address, moves);
+            // Fetch immediately, and again after delay to ensure RPC consistency
+            await fetchPet();
+            setTimeout(() => fetchPet(), 2000);
+            return txHash;
+        } catch (err: any) {
+            console.error("Hunt Hook Error:", err);
+            setError(err.message);
+            return null;
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const submitScore = async (score: number, gameId: string) => {
+        if (!address) return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const txHash = await submitGameScore(address, score, gameId);
+            await fetchPet();
+            setTimeout(() => fetchPet(), 2000);
+            return txHash;
+        } catch (err: any) {
+            setError(err.message);
+            return null;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         pet,
         stats,
@@ -176,11 +212,13 @@ export function usePet() {
         mint,
         train, // Original train (adds XP directly), kept for compatibility or remove? Let's keep.
         battle,
+        hunt,
         evolve,
         release,
         trainAttribute,
         buyEnergyPotion,
         buySmallEnergyPotion,
-        refresh: fetchPet
+        refresh: fetchPet,
+        submitScore
     };
 }
