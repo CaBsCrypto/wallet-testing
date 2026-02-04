@@ -29,6 +29,7 @@ pub struct PetStats {
 pub enum DataKey {
     Pet(Address), // Mapping Owner -> Pet
     Stats(Address), // Mapping Owner -> PetStats
+    Badges(Address), // Mapping Owner -> Vec<Symbol>
     Admin,        // Admin Address
     Paused,       // Boolean
 }
@@ -521,5 +522,95 @@ impl PetRegistry {
         let mut result = Vec::new(&env);
         result.push_back(symbol_short!("success"));
         result
+    }
+
+    // --------------------------------------------------------------------------------
+    // 8-Ball Pool Minigame
+    // --------------------------------------------------------------------------------
+    pub fn submit_pool_score(env: Env, owner: Address, score: u32) -> Vec<Symbol> {
+        owner.require_auth();
+
+        let stats_key = DataKey::Stats(owner.clone());
+        let mut stats = env.storage().persistent().get::<DataKey, PetStats>(&stats_key).expect("No stats found");
+        let current_time = env.ledger().timestamp();
+
+        // 1. Check Energy (Table Fee: 5 Energy)
+        if stats.energy < 5 {
+             panic!("Not enough energy");
+        }
+        stats.energy -= 5;
+
+        // 2. Calculate Rewards
+        // 2 Gold per ball potted
+        let gold_reward = score * 2;
+        stats.gold += gold_reward;
+        
+        // XP: 5 XP per ball
+        let xp_reward = (score * 5) as u64;
+
+        // 3. Save Stats
+        stats.last_update = current_time;
+        env.storage().persistent().set(&stats_key, &stats);
+        
+        // 4. Update Pet XP
+        let pet_key = DataKey::Pet(owner.clone());
+        if let Some(mut pet) = env.storage().persistent().get::<DataKey, Pet>(&pet_key) {
+             pet.xp += xp_reward;
+              // Check Level Up
+            let xp_needed = pet.level as u64 * 100;
+            if pet.xp >= xp_needed {
+                pet.level += 1;
+                pet.xp = pet.xp - xp_needed;
+                env.events().publish((symbol_short!("level_up"), owner.clone()), pet.level);
+            }
+            env.storage().persistent().set(&pet_key, &pet);
+        }
+
+        let mut result = Vec::new(&env);
+        result.push_back(symbol_short!("success"));
+        result
+    }
+
+    // --------------------------------------------------------------------------------
+    // Academy Badges (Soulbound Tokens)
+    // --------------------------------------------------------------------------------
+    pub fn claim_badge(env: Env, owner: Address, badge_id: Symbol) -> Vec<Symbol> {
+        owner.require_auth();
+
+        let key = DataKey::Badges(owner.clone());
+        let mut badges = env.storage().persistent().get::<DataKey, Vec<Symbol>>(&key)
+            .unwrap_or(Vec::new(&env));
+
+        // specific check: prevent duplicate
+        if badges.contains(badge_id.clone()) {
+             // Already has badge, just return current list
+             return badges;
+        }
+
+        badges.push_back(badge_id.clone());
+        env.storage().persistent().set(&key, &badges);
+        
+        // Award XP for Badge (e.g. 50 XP)
+        let pet_key = DataKey::Pet(owner.clone());
+        if let Some(mut pet) = env.storage().persistent().get::<DataKey, Pet>(&pet_key) {
+             pet.xp += 50;
+             // Check Level Up
+            let xp_needed = pet.level as u64 * 100;
+            if pet.xp >= xp_needed {
+                pet.level += 1;
+                pet.xp = pet.xp - xp_needed;
+                env.events().publish((symbol_short!("level_up"), owner.clone()), pet.level);
+            }
+            env.storage().persistent().set(&pet_key, &pet);
+        }
+
+        env.events().publish((symbol_short!("badge"), owner), badge_id);
+        badges
+    }
+
+    pub fn get_badges(env: Env, owner: Address) -> Vec<Symbol> {
+         let key = DataKey::Badges(owner.clone());
+         env.storage().persistent().get::<DataKey, Vec<Symbol>>(&key)
+            .unwrap_or(Vec::new(&env))
     }
 }

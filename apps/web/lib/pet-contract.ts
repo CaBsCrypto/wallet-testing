@@ -12,9 +12,17 @@ import {
 
 // import { signTransaction } from '@stellar/freighter-api'; // Removed static import
 
-const CONTRACT_ID = "CBO3K25CONABBA7L3KZNT2Q3L6WCZGWF42BAANGH22BDX5657QQLYHKR";
+const CONTRACT_ID = "CCSFBYXWJSLF3SGEIPHDFOC62DDAFFSZ3T3CFBPUH5JI5KGGGD6VZSXN";
 
-// ... existing code ...
+export async function submitPoolScore(ownerAddress: string, score: number): Promise<string> {
+    console.log("Calling submit_pool_score with:", { ownerAddress, score, contract: CONTRACT_ID });
+    const contract = new Contract(CONTRACT_ID);
+    const op = contract.call("submit_pool_score",
+        new Address(ownerAddress).toScVal(),
+        nativeToScVal(score, { type: "u32" })
+    );
+    return submitTx(ownerAddress, op);
+}
 
 export async function submitGameScore(ownerAddress: string, score: number, gameId: string): Promise<string> {
     console.log("Calling submit_game_score with:", { ownerAddress, score, gameId, contract: CONTRACT_ID });
@@ -346,4 +354,38 @@ async function submitTx(signerAddress: string, operation: xdr.Operation): Promis
     // If we timeout, we still return hash but warn user
     console.warn("Transaction timed out waiting for confirmation (but might still succeed).");
     return txHash;
+}
+
+export async function claimBadge(ownerAddress: string, badgeId: string): Promise<string> {
+    console.log("Calling claim_badge with:", { ownerAddress, badgeId, contract: CONTRACT_ID });
+    const contract = new Contract(CONTRACT_ID);
+    const op = contract.call("claim_badge",
+        new Address(ownerAddress).toScVal(),
+        nativeToScVal(badgeId, { type: "symbol" })
+    );
+    return submitTx(ownerAddress, op);
+}
+
+export async function getBadges(ownerAddress: string): Promise<string[]> {
+    const contract = new Contract(CONTRACT_ID);
+    const operation = contract.call("get_badges", new Address(ownerAddress).toScVal());
+
+    try {
+        const transaction = new TransactionBuilder(
+            new Account(ownerAddress, "0"),
+            { fee: "100", networkPassphrase: NETWORK_PASSPHRASE }
+        ).addOperation(operation).setTimeout(30).build();
+
+        const result = await server.simulateTransaction(transaction);
+        if (rpc.Api.isSimulationSuccess(result)) {
+            const val = result.result?.retval;
+            if (val) {
+                const raw = scValToNative(val);
+                return (raw as string[]) || [];
+            }
+        }
+    } catch (e) {
+        console.error("Error getting badges", e);
+    }
+    return [];
 }
