@@ -6,6 +6,7 @@ import { QuestView } from "./quest-view";
 import { SwapLab } from "./swap-lab";
 import { LPLab } from "./lp-lab";
 import { NFTCreator } from "./nft-creator";
+import { VaultLab } from "./vault-lab";
 import { Shield, Zap, PenTool, BookOpen, Lock, Star, ChevronRight, Scale, Droplets, Wand2 } from "lucide-react";
 import { useWallet } from "../../hooks/use-wallet";
 import { claimBadge, getBadges } from "../../lib/pet-contract";
@@ -144,6 +145,18 @@ export function AcademyHub() {
             )
         },
         {
+            id: "the_vault",
+            title: "The Vault",
+            description: "Interactive Lab: Supply assets to Blend Protocol and earn yield.",
+            tier: 3,
+            rewards: "🛡️ Guardian Badge + 150 XP",
+            icon: Lock,
+            badgeId: "guardian",
+            questions: [], // Interactive
+            content: null,
+            component: <VaultLab onComplete={handleQuestComplete} />
+        },
+        {
             id: "defi_trader",
             title: "The Trader",
             description: "Interactive Lab: Approve and Swap XLM for USDC on Soroswap.",
@@ -220,7 +233,7 @@ export function AcademyHub() {
             {selectedQuest && (
                 selectedQuest.component ? (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="w-full max-w-4xl relative bg-[#1c2e4a] rounded-3xl border-4 border-[#5d7599] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+                        <div className="w-full max-w-2xl relative bg-[#1c2e4a] rounded-3xl border-4 border-[#5d7599] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
                             <button
                                 onClick={() => setSelectedQuest(null)}
                                 className="absolute top-4 right-4 z-50 bg-[#ef233c] text-white p-2 rounded-full hover:bg-red-600 shadow-lg"
@@ -261,7 +274,7 @@ function TierSection({ title, sub, icon: Icon, quests, getStatus, onClick, color
                     <p className="text-[#94a3b8] text-xs font-bold uppercase tracking-wider">{sub}</p>
                 </div>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="flex overflow-x-auto pb-4 gap-4 px-2 snap-x scrollbar-hide">
                 {quests.map((quest: Quest) => (
                     <QuestCard
                         key={quest.id}
