@@ -1,4 +1,5 @@
-Contract,
+import {
+    Contract,
     TransactionBuilder,
     BASE_FEE,
     rpc,
@@ -89,7 +90,9 @@ async function buildTx(source: string, op: xdr.Operation) {
     }
 
     // Assemble transaction with recommended resources
-    return server.prepareTransaction(tx, simulated);
+    // Assemble transaction with recommended resources
+    // prepareTransaction takes only the transaction object in newer SDKs
+    return server.prepareTransaction(tx);
 }
 
 async function submitTx(tx: any) {
@@ -112,7 +115,7 @@ async function submitTx(tx: any) {
         const res = await server.sendTransaction(signedTx);
         console.log("Submission Result:", res);
 
-        if (res.status === "PENDING" || res.status === "SUCCESS") {
+        if (res.status === "PENDING") {
             return res;
         }
         if (res.status === "ERROR") {
