@@ -5,6 +5,7 @@ import { Navbar } from "@/components/navbar";
 import { Toaster } from 'sonner';
 import { TransactionProvider } from "@/contexts/transaction-context";
 import { TransactionLogger } from "@/components/transaction-logger";
+import { BottomNav } from "@/components/bottom-nav";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,23 +22,36 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet" />
       </head>
       <body
-        className="min-h-screen bg-black text-green-400 font-mono selection:bg-green-500 selection:text-black overscroll-none"
-        style={{ backgroundColor: '#000000', color: '#4ade80' }}
+        className="min-h-screen font-sans selection:bg-yellow-400 selection:text-blue-900 overscroll-none"
+        style={{
+          backgroundColor: '#1a2c42', // Fallback
+          background: 'linear-gradient(180deg, #1c2e4a 0%, #0d1b2a 100%)',
+          color: '#f0f4f8'
+        }}
       >
         <TransactionProvider>
-          <Navbar />
-          <main className="container mx-auto px-4 py-8 relative">
-            <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(rgba(18,16,16,0)50%,rgba(0,0,0,0.25)50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-50 bg-[length:100%_2px,3px_100%] pointer-events-none" />
+
+          <main className="container mx-auto px-4 py-8 relative z-10">
             {children}
           </main>
           <TransactionLogger />
+          <BottomNav />
           <Toaster
             theme="dark"
             toastOptions={{
-              style: { borderRadius: '0px', border: '2px solid #39ff14', background: '#000', fontFamily: '"VT323", monospace', textTransform: 'uppercase' }
+              style: {
+                borderRadius: '12px',
+                border: '2px solid #5d7599',
+                background: '#1c2e4a',
+                fontFamily: '"Outfit", sans-serif',
+                color: '#fff',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.5)'
+              }
             }}
           />
         </TransactionProvider>

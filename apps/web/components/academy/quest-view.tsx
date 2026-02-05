@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, AlertCircle, Award, ArrowRight, BookOpen } from "lucide-react";
+import { CheckCircle, AlertCircle, Award, ArrowRight, BookOpen, X, HelpCircle } from "lucide-react";
 
 interface Question {
     id: number;
@@ -34,7 +34,7 @@ export function QuestView({ title, content, questions, onComplete, onClose, isSu
         if (selectedOption === null) return;
 
         if (selectedOption !== questions[currentQuestion].correctIndex) {
-            setError("Incorrect answer. Review the briefing and try again!");
+            setError("Incorrect answer. Check the briefing!");
             return;
         }
 
@@ -57,92 +57,82 @@ export function QuestView({ title, content, questions, onComplete, onClose, isSu
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
-            <div className="bg-black border-4 border-green-600 rounded-none w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-[0_0_40px_rgba(22,163,74,0.2)] flex flex-col relative text-green-400">
-                {/* Scanlines Effect */}
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)50%,rgba(0,0,0,0.25)50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] pointer-events-none z-50 bg-[length:100%_2px,3px_100%] opacity-20" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            {/* Main Panel */}
+            <div className="w-full max-w-3xl bg-[#1c2e4a] border-4 border-[#5d7599] rounded-3xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+
                 {/* Header */}
-                <div className="p-4 border-b-2 border-slate-700 flex justify-between items-center sticky top-0 bg-slate-900 z-10 font-mono">
-                    <div>
-                        <h2 className="text-lg font-bold text-green-400 flex items-center gap-2 uppercase tracking-wide">
-                            <BookOpen className="w-5 h-5" /> TERMINAL :: {title}
-                        </h2>
-                        <div className="flex items-center gap-1 mt-2">
-                            {/* breadcrumbs */}
-                            <div className={`h-2 w-4 transition-colors border ${step === 'choice' ? 'bg-green-500 border-green-500' : 'border-slate-600'}`} />
-                            <div className={`h-2 w-4 transition-colors border ${step === 'briefing' ? 'bg-green-500 border-green-500' : step === 'choice' ? 'border-slate-600' : 'bg-green-900 border-green-900'}`} />
-                            <div className={`h-2 w-4 transition-colors border ${step === 'quiz' ? 'bg-green-500 border-green-500' : step === 'success' ? 'bg-green-900 border-green-900' : 'border-slate-600'}`} />
-                            <div className={`h-2 w-4 transition-colors border ${step === 'success' ? 'bg-green-500 border-green-500' : 'border-slate-600'}`} />
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="text-green-600 hover:text-green-400 hover:bg-green-900/20 px-2 py-1 transition-colors border border-transparent hover:border-green-600">
-                        [ ABORT ]
+                <div className="bg-[#0d1b2a] p-4 flex justify-between items-center border-b-4 border-[#1c2e4a]">
+                    <h2 className="text-xl text-white font-heading uppercase tracking-wider pl-2">{title}</h2>
+                    <button
+                        onClick={onClose}
+                        className="bg-[#ef233c] text-white p-2 rounded-xl border-b-4 border-[#d90429] active:border-b-0 active:translate-y-1 transition-all"
+                    >
+                        <X size={20} strokeWidth={3} />
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="p-6 flex-1">
-                    {/* CHOICE CHOICE SCREEN */}
+                {/* Content Area */}
+                <div className="p-6 md:p-8 flex-1 overflow-y-auto">
+
+                    {/* CHOICE SCREEN */}
                     {step === 'choice' && (
-                        <div className="space-y-8 animate-in zoom-in-95 duration-300 py-6 font-mono">
-                            <div className="text-center space-y-2 border-2 border-dashed border-slate-800 p-4">
-                                <h3 className="text-2xl font-bold text-white uppercase tracking-tighter" style={{ fontFamily: '"Press Start 2P"' }}>SELECT_MODE</h3>
-                                <p className="text-green-500 text-xs uppercase">&gt; CHOOSE INSTRUCTION PROTOCOL...</p>
+                        <div className="space-y-8 animate-in zoom-in-95 duration-300">
+                            <div className="text-center space-y-2">
+                                <div className="w-20 h-20 bg-[#273e5d] rounded-full mx-auto flex items-center justify-center border-4 border-[#5d7599]">
+                                    <HelpCircle size={40} className="text-[#ffb703]" />
+                                </div>
+                                <h3 className="text-3xl text-white font-heading">Choose Protocol</h3>
+                                <p className="text-[#94a3b8]">Read the material or jump straight to the quiz?</p>
                             </div>
 
                             <div className="grid md:grid-cols-2 gap-4">
                                 <button
                                     onClick={() => setStep('briefing')}
-                                    className="group relative p-6 bg-black border-2 border-purple-600 hover:bg-purple-900/20 rounded-none transition-all text-left space-y-3 hover:shadow-[4px_4px_0px_#9333ea]"
+                                    className="group bg-[#273e5d] border-b-[6px] border-[#0d1b2a] rounded-2xl p-6 text-left hover:brightness-110 active:border-b-0 active:translate-y-1 transition-all"
                                 >
-                                    <div className="w-12 h-12 border-2 border-purple-500 flex items-center justify-center bg-purple-900/20">
-                                        <BookOpen className="w-6 h-6 text-purple-400" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-lg text-purple-400 uppercase">&gt; DATA_ARCHIVE</h4>
-                                        <p className="text-[10px] text-purple-300/70 uppercase">Access Knowledge Database</p>
-                                    </div>
+                                    <h4 className="font-heading text-lg text-[#ffb703] uppercase mb-1">Study Material</h4>
+                                    <p className="text-sm text-white opacity-80">Read the lesson first.</p>
                                 </button>
 
                                 <button
                                     onClick={() => setStep('quiz')}
-                                    className="group relative p-6 bg-black border-2 border-blue-600 hover:bg-blue-900/20 rounded-none transition-all text-left space-y-3 hover:shadow-[4px_4px_0px_#2563eb]"
+                                    className="group bg-[#273e5d] border-b-[6px] border-[#0d1b2a] rounded-2xl p-6 text-left hover:brightness-110 active:border-b-0 active:translate-y-1 transition-all"
                                 >
-                                    <div className="w-12 h-12 border-2 border-blue-500 flex items-center justify-center bg-blue-900/20">
-                                        <CheckCircle className="w-6 h-6 text-blue-400" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-lg text-blue-400 uppercase">&gt; SKILL_CHECK</h4>
-                                        <p className="text-[10px] text-blue-300/70 uppercase">Execute Assessment Protocol</p>
-                                    </div>
+                                    <h4 className="font-heading text-lg text-[#80ed99] uppercase mb-1">Attempt Quiz</h4>
+                                    <p className="text-sm text-white opacity-80">Prove your knowledge.</p>
                                 </button>
                             </div>
                         </div>
                     )}
 
+                    {/* BRIEFING */}
                     {step === 'briefing' && (
                         <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                            <div className="prose prose-invert prose-slate max-w-none">
+                            <div className="prose prose-invert prose-lg max-w-none text-[#f0f4f8]">
                                 {content}
                             </div>
-                            <div className="flex justify-end pt-4">
+                            <div className="flex justify-end pt-8">
                                 <button
                                     onClick={() => setStep('quiz')}
-                                    className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all"
+                                    className="btn-clash bg-[#ffb703] border-[#fb8500] text-[#0d1b2a] px-8 py-4 rounded-xl font-black text-lg flex items-center gap-2 hover:brightness-110"
                                 >
-                                    Start Quiz <ArrowRight className="w-4 h-4" />
+                                    Start Quiz <ArrowRight className="w-6 h-6" />
                                 </button>
                             </div>
                         </div>
                     )}
 
+                    {/* QUIZ */}
                     {step === 'quiz' && (
-                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300 font-mono">
-                            <div className="flex justify-between items-center text-xs text-green-700 uppercase tracking-widest border-b border-green-900/50 pb-2">
-                                <span>&gt; QUERY_SEQUENCE: {currentQuestion + 1} / {questions.length}</span>
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="bg-[#0d1b2a] text-[#80ed99] px-3 py-1 rounded-full text-xs font-bold uppercase">
+                                    Question {currentQuestion + 1} of {questions.length}
+                                </span>
                             </div>
 
-                            <h3 className="text-lg font-bold text-white leading-relaxed">
+                            <h3 className="text-xl md:text-2xl font-bold text-white leading-relaxed">
                                 {questions[currentQuestion].text}
                             </h3>
 
@@ -151,56 +141,54 @@ export function QuestView({ title, content, questions, onComplete, onClose, isSu
                                     <button
                                         key={idx}
                                         onClick={() => handleOptionSelect(idx)}
-                                        className={`w-full text-left p-4 border-2 transition-all font-mono text-sm relative overflow-hidden group ${selectedOption === idx
-                                            ? 'bg-green-900/30 border-green-500 text-green-100 shadow-[0_0_10px_rgba(34,197,94,0.3)]'
-                                            : 'bg-black border-slate-800 hover:border-green-600 text-slate-300 hover:text-green-400'
+                                        className={`w-full text-left p-4 rounded-xl border-b-[4px] transition-all font-bold relative
+                                            ${selectedOption === idx
+                                                ? 'bg-[#ffe6a7] border-[#ffb703] text-[#0d1b2a] translate-y-1 border-b-0'
+                                                : 'bg-[#273e5d] border-[#0d1b2a] text-white hover:brightness-110'
                                             }`}
                                     >
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all ${selectedOption === idx ? 'bg-green-500' : 'bg-transparent group-hover:bg-green-800'}`} />
-                                        <span className="font-bold mr-3 opacity-50">&gt; OPT_{String.fromCharCode(65 + idx)}:</span> {option}
+                                        <span className="opacity-50 mr-2">{String.fromCharCode(65 + idx)}.</span> {option}
                                     </button>
                                 ))}
                             </div>
 
                             {error && (
-                                <div className="p-3 bg-red-950/30 border-l-4 border-red-500 text-red-400 text-xs font-mono flex items-center gap-2 animate-pulse">
-                                    <AlertCircle className="w-4 h-4" />
-                                    ERROR: {error}
+                                <div className="p-4 bg-red-500/10 border-2 border-red-500 rounded-xl text-red-200 text-sm font-bold flex items-center gap-2 animate-shake">
+                                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                    {error}
                                 </div>
                             )}
 
-                            <div className="flex justify-end pt-4 border-t border-slate-900">
+                            <div className="flex justify-end pt-6 border-t font-heading border-[#5d7599]/30">
                                 <button
                                     onClick={handleNextQuestion}
                                     disabled={selectedOption === null || isSubmitting}
-                                    className="bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-black px-8 py-3 font-bold flex items-center gap-2 transition-all hover:shadow-[4px_4px_0px_#000] active:translate-y-1"
+                                    className="btn-clash bg-[#80ed99] border-[#22c55e] text-[#0d1b2a] px-8 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {isSubmitting ? (
-                                        "PROCESSING..."
-                                    ) : currentQuestion === questions.length - 1 ? (
-                                        "COMMIT_&_CLAIM"
-                                    ) : (
-                                        "CONTINUE_SEQUENCE"
-                                    )}
+                                    {isSubmitting ? "Checking..." : currentQuestion === questions.length - 1 ? "Finish & Claim" : "Next Question"}
                                 </button>
                             </div>
                         </div>
                     )}
 
+                    {/* SUCCESS */}
                     {step === 'success' && (
-                        <div className="text-center space-y-6 py-10 animate-in zoom-in duration-300 font-mono">
-                            <div className="w-24 h-24 border-4 border-yellow-500 bg-yellow-500/10 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(234,179,8,0.3)] animate-bounce">
-                                <Award className="w-12 h-12 text-yellow-500" />
+                        <div className="text-center space-y-6 py-10 animate-in zoom-in duration-300">
+                            <div className="w-32 h-32 mx-auto relative">
+                                <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full animate-pulse"></div>
+                                <Award className="w-32 h-32 text-[#ffb703] drop-shadow-lg animate-bounce" />
                             </div>
+
                             <div className="space-y-2">
-                                <h2 className="text-2xl font-bold text-yellow-400 mb-2 uppercase tracking-tight">Quest Complete!</h2>
-                                <p className="text-green-500 text-sm uppercase">&gt; SKILL_ACQUIRED<br />&gt; SOULBOUND_BADGE_MINTED</p>
+                                <h2 className="text-4xl font-heading text-white mb-2">Quest Complete!</h2>
+                                <p className="text-[#94a3b8]">You've earned a new badge.</p>
                             </div>
+
                             <button
                                 onClick={onClose}
-                                className="bg-slate-800 border-2 border-slate-600 hover:text-white hover:border-white text-slate-300 px-8 py-3 font-bold transition-all uppercase"
+                                className="btn-clash bg-[#273e5d] border-[#0d1b2a] text-white px-8 py-4 rounded-xl"
                             >
-                                [ Return to Academy ]
+                                Return to Academy
                             </button>
                         </div>
                     )}

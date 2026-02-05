@@ -196,7 +196,7 @@ export function AcademyHub() {
     return (
         <div className="space-y-12">
             {/* Header */}
-            <div className="text-center space-y-4 border-b-2 border-slate-800 pb-8">
+            {/* <div className="text-center space-y-4 border-b-2 border-slate-800 pb-8">
                 <h2 className="text-3xl font-bold text-white inline-flex items-center gap-3 font-mono tracking-tighter" style={{ fontFamily: '"Press Start 2P"' }}>
                     <BookOpen className="w-8 h-8 text-green-500" /> KNOWLEDGE_BASE
                 </h2>
@@ -204,32 +204,33 @@ export function AcademyHub() {
                     &gt; ACCESSING ARCHIVE... <br />
                     &gt; COMPLETE MODULES TO DECRYPT DATA AND EARN SOULBOUND BADGES.
                 </p>
-            </div>
+            </div> */}
+            {/* Note: Leader header is now handled by page.tsx, we focus on list */}
 
             {/* Tier 1 */}
-            <TierSection title="LEVEL_01: INITIATE" sub="FUNDAMENTAL_PROTOCOLS" icon={Lock} quests={tier1} getStatus={getStatus} onClick={setSelectedQuest} color="green" />
+            <TierSection title="Basic Training" sub="Fundamentals" icon={Lock} quests={tier1} getStatus={getStatus} onClick={setSelectedQuest} color="green" />
 
             {/* Tier 2 */}
-            <TierSection title="LEVEL_02: EXPLORER" sub="NETWORK_TOPOLOGY" icon={Star} quests={tier2} getStatus={getStatus} onClick={setSelectedQuest} color="cyan" />
+            <TierSection title="Advanced Theory" sub="DeFi Protocols" icon={Star} quests={tier2} getStatus={getStatus} onClick={setSelectedQuest} color="cyan" />
 
             {/* Tier 3 */}
-            <TierSection title="LEVEL_03: TRADER" sub="DECENTRALIZED_OPERATIONS" icon={Scale} quests={tier3} getStatus={getStatus} onClick={setSelectedQuest} color="pink" />
-
-            {/* Coming Soon */}
-            {/* <div className="opacity-50 text-center text-slate-500 text-sm">More tiers coming soon...</div> */}
+            <TierSection title="Field Operations" sub="Interactive Labs" icon={Scale} quests={tier3} getStatus={getStatus} onClick={setSelectedQuest} color="pink" />
 
             {/* Modal Logic */}
             {selectedQuest && (
                 selectedQuest.component ? (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="w-full max-w-2xl relative">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="w-full max-w-4xl relative bg-[#1c2e4a] rounded-3xl border-4 border-[#5d7599] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
                             <button
                                 onClick={() => setSelectedQuest(null)}
-                                className="absolute -top-10 right-0 text-slate-400 hover:text-white transition-colors flex items-center gap-2"
+                                className="absolute top-4 right-4 z-50 bg-[#ef233c] text-white p-2 rounded-full hover:bg-red-600 shadow-lg"
                             >
-                                Close Lab ✕
+                                ✕
                             </button>
-                            {selectedQuest.component}
+                            <div className="p-6">
+                                <h2 className="text-2xl text-white font-heading text-center mb-6">{selectedQuest.title} Lab</h2>
+                                {selectedQuest.component}
+                            </div>
                         </div>
                     </div>
                 ) : (
@@ -247,24 +248,17 @@ export function AcademyHub() {
     );
 }
 
-// Helper Component for Tier Sections to reduce duplication
-// Helper Component for Tier Sections to reduce duplication
+// Helper Component for Tier Sections
 function TierSection({ title, sub, icon: Icon, quests, getStatus, onClick, color = "green" }: any) {
-    const colorClasses: any = {
-        green: "text-green-500 border-green-900",
-        cyan: "text-cyan-500 border-cyan-900",
-        pink: "text-pink-500 border-pink-900"
-    };
-
     return (
         <div className="space-y-6">
-            <div className={`flex items-center gap-4 border-b-2 ${colorClasses[color].split(' ')[1]} pb-2`}>
-                <div className={`p-2 border-2 ${colorClasses[color]} bg-black`}>
-                    <Icon className={`w-5 h-5 ${colorClasses[color].split(' ')[0]}`} />
+            <div className="flex items-center gap-3 ml-2">
+                <div className="bg-[#ffb703] p-2 rounded-xl text-[#0d1b2a] shadow-sm transform -rotate-3">
+                    <Icon size={20} strokeWidth={2.5} />
                 </div>
                 <div>
-                    <h3 className={`text-xl font-bold ${colorClasses[color].split(' ')[0]} font-mono tracking-wider`}>{title}</h3>
-                    <p className="text-slate-500 text-xs uppercase font-mono tracking-widest">&gt; {sub}</p>
+                    <h3 className="text-2xl text-white font-heading uppercase leading-none drop-shadow-md">{title}</h3>
+                    <p className="text-[#94a3b8] text-xs font-bold uppercase tracking-wider">{sub}</p>
                 </div>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
