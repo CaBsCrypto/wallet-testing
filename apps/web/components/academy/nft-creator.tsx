@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useWallet } from "../../hooks/use-wallet";
 import { useTransactionLogger } from "../../contexts/transaction-context";
-import { mintStellarAsset, getRandomAIImage } from "../../lib/nft-lab";
+import { mintStellarAsset, generateAIImage, getMockAIImage } from "../../lib/nft-lab";
 import { Loader2, Wand2, Image as ImageIcon, Sparkles, CheckCircle2, Zap } from "lucide-react";
 import Image from "next/image";
 
@@ -36,14 +36,18 @@ export function NFTCreator({ onComplete }: { onComplete: () => void }) {
         setIsGenerating(true);
         setGeneratedImage(null);
 
-        // API is currently blocked by Key restrictions (404). 
-        // Using Smart Simulation (High Quality Images) to allow Quest completion.
-        setTimeout(() => {
-            const result = getRandomAIImage(prompt);
+        try {
+            // Use Real AI Generation via Pollinations
+            const result = await generateAIImage(prompt);
             setGeneratedImage(result);
-            setIsGenerating(false);
             setStep(2);
-        }, 2500);
+        } catch (e) {
+            console.error("Generation failed", e);
+            // Fallback to mock if API fails
+            setGeneratedImage(getMockAIImage(prompt));
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const handleMint = async () => {
@@ -53,7 +57,14 @@ export function NFTCreator({ onComplete }: { onComplete: () => void }) {
 
         try {
             // Generate a cool 4-letter code from prompt or random
-            const code = "ART" + Math.floor(Math.random() * 9);
+            const uniqueId = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+            const code = "ART" + uniqueId;
+
+            // Save to LocalStorage for persistence in this demo
+            if (generatedImage) {
+                localStorage.setItem(`nft_img_${code}`, generatedImage);
+            }
+
             await mintStellarAsset(address, code, "ipfs_hash_mock");
 
             addLog("success", "NFT Minted", `Asset ${code} sent to your wallet!`);
@@ -63,6 +74,15 @@ export function NFTCreator({ onComplete }: { onComplete: () => void }) {
             addLog("error", "Mint Failed", e.message);
         } finally {
             setIsMinting(false);
+        }
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setGeneratedImage(url);
+            setStep(2);
         }
     };
 
@@ -97,21 +117,41 @@ export function NFTCreator({ onComplete }: { onComplete: () => void }) {
                             </div>
                         </div>
 
-                        <RawButton
-                            onClick={handleGenerate}
-                            disabled={!prompt || isGenerating}
-                            variant="primary"
-                        >
-                            {isGenerating ? (
-                                <>
-                                    <Sparkles className="w-4 h-4 animate-spin" /> Generating...
-                                </>
-                            ) : (
-                                <>
-                                    <Zap className="w-4 h-4" /> Generate Art
-                                </>
-                            )}
-                        </RawButton>
+                        <div className="grid grid-cols-2 gap-3">
+                            <RawButton
+                                onClick={handleGenerate}
+                                disabled={!prompt || isGenerating}
+                                variant="primary"
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <Sparkles className="w-4 h-4 animate-spin" /> Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Zap className="w-4 h-4" /> AI Generate
+                                    </>
+                                )}
+                            </RawButton>
+
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                                    onChange={handleFileUpload}
+                                    disabled={isGenerating}
+                                />
+                                <RawButton
+                                    onClick={() => { }}
+                                    variant="secondary"
+                                    disabled={isGenerating}
+                                >
+                                    <ImageIcon className="w-4 h-4" /> Upload
+                                </RawButton>
+                            </div>
+                        </div>
+
 
                         {isGenerating && (
                             <p className="text-center text-xs text-pink-400 animate-pulse">
@@ -133,7 +173,7 @@ export function NFTCreator({ onComplete }: { onComplete: () => void }) {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
                                 <p className="text-white text-xs font-mono truncate w-full text-left opacity-80">
-                                    &gt; {prompt}
+                                    &gt; {prompt || "Uploaded Image"}
                                 </p>
                             </div>
                         </div>

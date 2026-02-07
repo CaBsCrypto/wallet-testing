@@ -12,7 +12,7 @@ import {
 
 // import { signTransaction } from '@stellar/freighter-api'; // Removed static import
 
-const CONTRACT_ID = "CCSFBYXWJSLF3SGEIPHDFOC62DDAFFSZ3T3CFBPUH5JI5KGGGD6VZSXN";
+const CONTRACT_ID = "CAAEXIKZ6XNQD2C2EQLM7WFSJE3JPLKYYAVRKPZV24FX67TJBLQLWNBX";
 
 export async function submitPoolScore(ownerAddress: string, score: number): Promise<string> {
     console.log("Calling submit_pool_score with:", { ownerAddress, score, contract: CONTRACT_ID });

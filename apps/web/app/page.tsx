@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Zap, Activity, ShoppingBag, Wallet, Coins, Trophy, Plus, Settings, Gamepad2, GraduationCap, X } from "lucide-react";
 import { BadgeGallery } from "@/components/badge-gallery";
+import { AssetGallery } from "@/components/asset-gallery";
 import { getUSDCBalance, checkUSDCTrust } from "@/lib/soroswap";
 
 export default function Home() {
@@ -219,6 +220,12 @@ export default function Home() {
       )}
 
 
+
+
+      {/* ASSET GALLERY */}
+      <div className="max-w-lg mx-auto px-4 mt-8">
+        <AssetGallery />
+      </div>
 
       {/* MAIN NAVIGATION CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-lg mx-auto mt-8 px-4">

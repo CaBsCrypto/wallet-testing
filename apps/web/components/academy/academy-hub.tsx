@@ -7,10 +7,39 @@ import { SwapLab } from "./swap-lab";
 import { LPLab } from "./lp-lab";
 import { NFTCreator } from "./nft-creator";
 import { VaultLab } from "./vault-lab";
-import { Shield, Zap, PenTool, BookOpen, Lock, Star, ChevronRight, Scale, Droplets, Wand2 } from "lucide-react";
+import {
+    Check,
+    Lock,
+    Play,
+    HelpCircle,
+    Shield,
+    Zap,
+    PenTool,
+    Scale,
+    Briefcase,
+    Droplets,
+    Wand2,
+    Cloud,
+    Star,
+    ArrowDown
+} from "lucide-react";
 import { useWallet } from "../../hooks/use-wallet";
 import { claimBadge, getBadges } from "../../lib/pet-contract";
 import { useTransactionLogger } from "../../contexts/transaction-context";
+import { KeypairGenerator, MessageSigner, PhishingDetector, ImpermanentLossSim } from "./interactive-lessons";
+import { AlertCircle } from "lucide-react";
+
+export interface QuestModule {
+    title?: string;
+    content?: React.ReactNode;
+    quiz?: {
+        id: number;
+        text: string;
+        options: string[];
+        correctIndex: number;
+    }[];
+    component?: React.ReactNode; // Allow full component modules
+}
 
 export interface Quest {
     id: string;
@@ -20,9 +49,8 @@ export interface Quest {
     rewards: string;
     icon: any;
     badgeId: string;
-    questions: any[];
-    content: React.ReactNode;
-    component?: React.ReactNode; // For interactive quests
+    modules: QuestModule[];
+    color?: string; // Optional for now, but will be populated
 }
 
 export function AcademyHub() {
@@ -67,42 +95,166 @@ export function AcademyHub() {
             rewards: "🛡️ Initiate Badge",
             icon: Shield,
             badgeId: "initiate",
-            questions: [
-                { id: 1, text: "What is a Private Key?", options: ["Public username", "Secret code for total control", "Email password"], correctIndex: 1 },
-                { id: 2, text: "Share Seed Phrase with:", options: ["Support", "Websites", "No one"], correctIndex: 2 },
-                { id: 3, text: "Lost Key means:", options: ["Lost Funds", "Recover via SMS", "Bank reset"], correctIndex: 0 }
-            ],
-            content: (
-                <div className="space-y-4">
-                    <p className="text-lg text-slate-300">Welcome, Initiate. Rule #1: <strong>Self-Custody</strong>.</p>
-                    <div className="bg-slate-800 p-4 rounded-xl border-l-4 border-purple-500">
-                        <h4 className="font-bold text-white">Not Your Keys, Not Your Crypto</h4>
-                        <p className="text-slate-400 text-sm">Your Private Key is the only way to access your funds. Lose it, and it's gone forever.</p>
-                    </div>
-                </div>
-            )
+            modules: [
+                {
+                    title: "Keys & Custody",
+                    content: (
+                        <div className="space-y-6">
+                            <p className="text-lg text-slate-300">
+                                Welcome, Initiate. To safely navigate the Void, you must understand your <strong>Keys</strong>.
+                            </p>
+
+                            <div className="bg-slate-800/50 p-4 rounded-xl border-l-4 border-blue-500">
+                                <h4 className="font-bold text-white mb-2">Key Concepts</h4>
+                                <ul className="list-disc ml-4 space-y-2 text-slate-400 text-sm">
+                                    <li><strong>Public Key:</strong> Your address. Like an email address, you share this so people can find you.</li>
+                                    <li><strong>Private Key:</strong> Your signature. Like a password, but if lost, cannot be reset.</li>
+                                </ul>
+                            </div>
+
+                            <p className="text-slate-300">
+                                Try generating a pair now. Notice how they are always created together.
+                            </p>
+
+                            <KeypairGenerator />
+
+                            <div className="bg-red-900/20 p-4 rounded-xl border border-red-500/30">
+                                <div className="flex items-center gap-2 text-red-400 font-bold mb-2">
+                                    <AlertCircle size={18} />
+                                    CRITICAL RULE
+                                </div>
+                                <p className="text-red-200 text-sm">
+                                    "Not Your Keys, Not Your Crypto." If you leave your assets on an exchange, they own the keys, not you.
+                                </p>
+                            </div>
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "Which key is safe to share with others?", options: ["Private Key", "Public Key", "Both", "Neither"], correctIndex: 1 },
+                        { id: 2, text: "What happens if you lose your Private Key?", options: ["Support resets it", "You lose access forever", "Use email backup"], correctIndex: 1 }
+                    ]
+                }
+            ]
         },
         {
             id: "the_signer",
             title: "The Signer",
-            description: "How Digital Signatures work.",
+            description: "Understand Multi-sig security.",
             tier: 1,
-            rewards: "🖋️ Signer Badge",
+            rewards: "✍️ Signer Badge + 100 XP",
             icon: PenTool,
             badgeId: "signer",
-            questions: [
-                { id: 1, text: "Signing proves:", options: ["You know the password", "Ownership without revealing key", "Nothing"], correctIndex: 1 },
-                { id: 2, text: "Can signatures be forged?", options: ["Yes", "Mathematically Impossible", "Maybe"], correctIndex: 1 }
-            ],
-            content: (
-                <div className="space-y-4">
-                    <p className="text-lg text-slate-300">You don't send passwords. You <strong>sign</strong> transactions.</p>
-                    <div className="bg-slate-800 p-4 rounded-xl border-l-4 border-pink-500">
-                        <h4 className="font-bold text-white">Math Magic</h4>
-                        <p className="text-slate-400 text-sm">Signatures prove you approved an action without showing your private key.</p>
-                    </div>
-                </div>
-            )
+            color: "amber", // Warning/Caution = Amber
+            modules: [
+                {
+                    title: "The Power of Signatures",
+                    content: (
+                        <div className="space-y-6">
+                            <p className="text-lg text-slate-300">
+                                On the blockchain, you don't "log in". You <strong>prove identity</strong> by signing messages.
+                            </p>
+
+                            <div className="bg-slate-800/50 p-4 rounded-xl border-l-4 border-purple-500">
+                                <h4 className="font-bold text-white mb-2">How it works</h4>
+                                <p className="text-slate-400 text-sm mb-2">
+                                    1. You write a message (transaction).<br />
+                                    2. You "Sign" it with your Private Key.<br />
+                                    3. The network uses your Public Key to verify the signature matches.
+                                </p>
+                            </div>
+
+                            <p className="text-slate-300">
+                                Experiment below. See how changing the message completely changes the signature.
+                            </p>
+
+                            <MessageSigner />
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "A digital signature proves:", options: ["You know the password", "You possess the private key", "You are online"], correctIndex: 1 },
+                        { id: 2, text: "Can a signature be forged without the private key?", options: ["Yes, easily", "No, it's mathematically impossible", "Maybe with a fast computer"], correctIndex: 1 }
+                    ]
+                }
+            ]
+        },
+        {
+            id: "the_guardian",
+            title: "The Guardian",
+            description: "Advanced Phishing Detection Lab.",
+            tier: 4,
+            rewards: "🛡️ Guardian Badge + 500 XP",
+            icon: Shield,
+            badgeId: "guardian_pro",
+            color: "red", // High Security = Red
+            modules: [
+                {
+                    title: "Phishing 101",
+                    content: (
+                        <div className="space-y-6">
+                            <p className="text-lg text-slate-300">
+                                Hackers don't break encryption. They <strong>trick you</strong> into signing bad transactions.
+                            </p>
+                            <PhishingDetector />
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "A website asks for your Seed Phrase to 'Verify' wallet.", options: ["Provide it", "Ignore it", "Report & Block"], correctIndex: 2 }
+                    ]
+                }
+            ]
+        },
+        {
+            id: "stellar_pilot",
+            title: "Stellar Pilot",
+            description: "Learn Path Payments & Gas.",
+            tier: 1,
+            rewards: "🚀 Pilot Badge + 100 XP",
+            icon: Zap,
+            badgeId: "pilot",
+            color: "orange", // Speed/Energy = Orange
+            modules: [
+                {
+                    title: "Path Payments",
+                    content: (
+                        <div className="space-y-4">
+                            <p className="text-lg text-slate-300">Stellar can swap assets <strong>while sending</strong> them.</p>
+                            <div className="bg-slate-800 p-4 rounded-xl border-l-4 border-orange-500">
+                                <h4 className="font-bold text-white">Send USDC, Receiver gets XLM</h4>
+                                <p className="text-slate-400 text-sm">The DEX finds the best path automatically. No need to swap manually first.</p>
+                            </div>
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "Path Payment allows:", options: ["Sending gasless tx", "Auto-swap during send", "Free money"], correctIndex: 1 }
+                    ]
+                }
+            ]
+        },
+        {
+            id: "defi_strategist",
+            title: "DeFi Strategist",
+            description: "Advanced yield mechanics & risks.",
+            tier: 4,
+            rewards: "📈 Strategist Badge",
+            icon: Scale,
+            badgeId: "strategist",
+            color: "indigo", // Strategy/Brain = Indigo
+            modules: [
+                {
+                    title: "Impermanent Loss",
+                    content: (
+                        <div className="space-y-6">
+                            <p className="text-lg text-slate-300">
+                                High yield comes with risks. If prices move too much, your LP position loses value vs holding.
+                            </p>
+                            <ImpermanentLossSim />
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "When does IL happen?", options: ["Prices stable", "Prices diverge", "Fees are high"], correctIndex: 1 }
+                    ]
+                }
+            ]
         },
         {
             id: "gas_station",
@@ -112,182 +264,348 @@ export function AcademyHub() {
             rewards: "🧭 Explorer Badge",
             icon: Zap,
             badgeId: "explorer",
-            questions: [
-                { id: 1, text: "What is Gas?", options: ["Fuel", "Network Fee", " Electricity"], correctIndex: 1 },
-                { id: 2, text: "Why fees?", options: ["Prevent Spam", "Profit", "Tax"], correctIndex: 0 }
-            ],
-            content: (
-                <div className="space-y-4">
-                    <p className="text-lg text-slate-300">Blockchain space is limited. You pay rent (Gas) to use it.</p>
-                </div>
-            )
+            color: "yellow", // Gas/Fuel = Yellow
+            modules: [
+                {
+                    title: "Gas Fundamentals",
+                    content: (
+                        <div className="space-y-4">
+                            <p className="text-lg text-slate-300">Blockchain space is limited. You pay rent (Gas) to use it.</p>
+                            <div className="bg-slate-800 p-4 rounded-xl border-l-4 border-yellow-500">
+                                <h4 className="font-bold text-white">Why Fees?</h4>
+                                <ul className="list-disc ml-4 space-y-2 text-slate-400 text-sm">
+                                    <li><strong>Spam Prevention:</strong> Costs prevent attackers from flooding the network.</li>
+                                    <li><strong>Validator Incentive:</strong> Fees pay the machines ensuring security.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "What is Gas?", options: ["Fuel", "Network Fee", " Electricity"], correctIndex: 1 },
+                        { id: 2, text: "Why fees?", options: ["Prevent Spam", "Profit", "Tax"], correctIndex: 0 }
+                    ]
+                }
+            ]
         },
-        {
-            id: "defi_101",
-            title: "Liquidity 101",
-            description: "AMMs, Pools, and Swaps explained.",
-            tier: 2,
-            rewards: "🎓 Scholar Badge",
-            icon: BookOpen,
-            badgeId: "scholar",
-            questions: [
-                { id: 1, text: "Liquidiy Pool is:", options: ["Water", "Smart Contract with Tokens", "Bank"], correctIndex: 1 },
-                { id: 2, text: "Price determined by:", options: ["CEO", "Math (x*y=k)", "Stock Market"], correctIndex: 1 }
-            ],
-            content: (
-                <div className="space-y-4">
-                    <p className="text-lg text-slate-300">DeFi uses <strong>AMMs</strong> instead of Order Books.</p>
-                    <div className="bg-slate-800 p-4 rounded-xl border-l-4 border-cyan-500">
-                        <h4 className="font-bold text-white">Robotic Trading</h4>
-                        <p className="text-slate-400 text-sm">You trade against a pool of tokens. Math sets the price based on ratio.</p>
-                    </div>
-                </div>
-            )
-        },
+
         {
             id: "the_vault",
             title: "The Vault",
-            description: "Interactive Lab: Supply assets to Blend Protocol and earn yield.",
+            description: "Learn Lending Markets & Earn Yield.",
             tier: 3,
             rewards: "🛡️ Guardian Badge + 150 XP",
             icon: Lock,
             badgeId: "guardian",
-            questions: [], // Interactive
-            content: null,
-            component: <VaultLab onComplete={handleQuestComplete} />
+            color: "emerald", // Money/Safe = Green
+            modules: [
+                {
+                    title: "Lending Protocols",
+                    content: (
+                        <div className="space-y-4">
+                            <p className="text-lg text-slate-300">
+                                DeFi banks don't have bankers. <strong>Smart Contracts</strong> manage deposits and loans automatically.
+                            </p>
+                            <div className="bg-slate-800 p-4 rounded-xl border-l-4 border-blue-500">
+                                <h4 className="font-bold text-white">How it works?</h4>
+                                <ul className="list-disc ml-4 space-y-2 text-slate-400 text-sm">
+                                    <li><strong>Over-collateralization:</strong> Borrowers must deposit more value than they borrow (e.g., Deposit $150 ETH to borrow $100 USDC).</li>
+                                    <li><strong>Liquidation:</strong> If collateral value drops, it's sold to pay the debt.</li>
+                                    <li><strong>Yield:</strong> Interest paid by borrowers goes to depositors (You!).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "Where does the Yield come from?", options: ["The government", "Borrower interest", "Magic"], correctIndex: 1 },
+                        { id: 2, text: "What happens if collateral drops too low?", options: ["Bank calls you", "Liquidation", "Nothing"], correctIndex: 1 }
+                    ]
+                },
+                {
+                    title: "Vault Lab",
+                    component: <VaultLab onComplete={handleQuestComplete} />
+                }
+            ]
         },
         {
             id: "defi_trader",
             title: "The Trader",
-            description: "Interactive Lab: Approve and Swap XLM for USDC on Soroswap.",
+            description: "Master Decentralized Exchanges (DEX).",
             tier: 3,
             rewards: "⚖️ Trader Badge + 100 XP",
             icon: Scale,
             badgeId: "trader",
-            questions: [], // Interactive
-            content: null,
-            component: <SwapLab onComplete={handleQuestComplete} />
+            color: "cyan", // Tech/Trading = Cyan
+            modules: [
+                {
+                    title: "DEX Mechanics",
+                    content: (
+                        <div className="space-y-4">
+                            <p className="text-lg text-slate-300">
+                                Traditional exchanges use an <strong>Order Book</strong> (Buyers meet Sellers). DeFi uses <strong>Liquidity Pools</strong>.
+                            </p>
+                            <div className="bg-slate-800 p-4 rounded-xl border-l-4 border-cyan-500">
+                                <h4 className="font-bold text-white">Automated Market Maker (AMM)</h4>
+                                <p className="text-slate-400 text-sm">
+                                    You trade against a valid pool of tokens. The price is set mathematically based on the ratio of tokens in the pool.
+                                </p>
+                            </div>
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "Who sets the price on a DEX?", options: ["The CEO", "Mathematical Formula (AMM)", "Wall Street"], correctIndex: 1 }
+                    ]
+                },
+                {
+                    title: "Swap Lab",
+                    component: <SwapLab onComplete={handleQuestComplete} />
+                }
+            ]
         },
         {
             id: "defi_lp",
             title: "Liquidity Provider",
-            description: "Interactive Lab: Provide 50/50 Liquidity to earn fees.",
+            description: "Earn Trading Fees by providing capital.",
             tier: 3,
             rewards: "💧 Market Maker Badge + 200 XP",
             icon: Droplets,
             badgeId: "market_maker",
-            questions: [],
-            content: null,
-            component: <LPLab onComplete={handleQuestComplete} />
+            color: "blue", // Water/Liquidity = Blue
+            modules: [
+                {
+                    title: "Becoming the Bank",
+                    content: (
+                        <div className="space-y-4">
+                            <p className="text-lg text-slate-300">
+                                Traders pay a 0.3% fee on every swap. This fee goes to <strong>Liquidity Providers (LPs)</strong>.
+                            </p>
+                            <div className="bg-slate-800 p-4 rounded-xl border-l-4 border-indigo-500">
+                                <h4 className="font-bold text-white">The Rule of Two</h4>
+                                <p className="text-slate-400 text-sm">
+                                    To be an LP, you must deposit equal value of <strong>both tokens</strong> (e.g., $50 XLM + $50 USDC).
+                                </p>
+                            </div>
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "Who earns the trading fees?", options: ["Miners", "Liquidity Providers", "Developers"], correctIndex: 1 },
+                        { id: 2, text: "What must you deposit?", options: ["One token", "Equal value of both tokens", "Any amount"], correctIndex: 1 }
+                    ]
+                },
+                {
+                    title: "LP Lab",
+                    component: <LPLab onComplete={handleQuestComplete} />
+                }
+            ]
         },
         {
             id: "nft_artist",
             title: "The Artist",
-            description: "Gen AI Lab: Create and Mint your own Art Assets.",
+            description: "Create and Mint Digital Assets.",
             tier: 3,
             rewards: "🎨 Creator Badge + 500 XP",
             icon: Wand2,
             badgeId: "creator",
-            questions: [],
-            content: null,
-            component: <NFTCreator onComplete={handleQuestComplete} />
+            color: "purple", // Creativity/Magic = Purple
+            modules: [
+                {
+                    title: "NFT Standards",
+                    content: (
+                        <div className="space-y-4">
+                            <p className="text-lg text-slate-300">
+                                NFTs are unique tokens. On Stellar, they are just assets with <strong>Metadata</strong>.
+                            </p>
+                            <div className="bg-slate-800 p-4 rounded-xl border-l-4 border-purple-500">
+                                <h4 className="font-bold text-white">Metadata?</h4>
+                                <p className="text-slate-400 text-sm">
+                                    It's a JSON file (Name, Description, Image URL) linked to the token. This proves what the token represents.
+                                </p>
+                            </div>
+                        </div>
+                    ),
+                    quiz: [
+                        { id: 1, text: "What makes an NFT unique?", options: ["Price", "Metadata", "Mining"], correctIndex: 1 }
+                    ]
+                },
+                {
+                    title: "NFT Studio",
+                    component: <NFTCreator onComplete={handleQuestComplete} />
+                }
+            ]
         }
     ];
 
-    const getStatus = (quest: Quest) => {
+    // Progression Logic
+    const getStatus = (quest: Quest, index: number, allQuests: Quest[]) => {
         if (ownedBadges.includes(quest.badgeId)) return 'completed';
-        // Simple progression logic: 
-        // Tier 1 always available.
-        // Tier 2 needs at least 1 Tier 1 badge? (optional, for now all available)
-        return 'available';
+
+        // Locked Logic:
+        // 1. Tier 1 is always unlocked.
+        if (quest.tier === 1) return 'available';
+
+        // 2. Higher tiers require requirements
+        // Simple check: Is the previous quest completed? 
+        // We sort quests by tier roughly, but let's just say "Order Matters" in the list.
+        const prevQuest = allQuests[index - 1];
+        if (prevQuest && ownedBadges.includes(prevQuest.badgeId)) {
+            return 'available';
+        }
+
+        return 'locked';
     };
 
-    const tier1 = QUESTS.filter(q => q.tier === 1);
-    const tier2 = QUESTS.filter(q => q.tier === 2);
-    const tier3 = QUESTS.filter(q => q.tier === 3);
+    // Flatten and Sort Quests for Path
+    const pathQuests = [...QUESTS].sort((a, b) => a.tier - b.tier);
+
+    // Calculate SVG Path
+    // Zig-zag pattern: Start Center -> Right -> Left -> Right...
+    // We need a dynamic height based on number of quests.
+    // Each quest takes roughly 160px vertical space. 
+    const itemHeight = 160;
+    const totalHeight = pathQuests.length * itemHeight + 200;
+
+    // Function to generate the wavy path string
+    const generatePath = () => {
+        let d = `M 320 0 `; // Start top center (assuming 640px width container)
+
+        pathQuests.forEach((_, index) => {
+            const y = (index * itemHeight) + 100;
+            const isRight = index % 2 === 0; // First item goes Right
+            const x = isRight ? 480 : 160;   // Zig to 480 or Zag to 160
+
+            // Simple curve? Quadratic bezier
+            // Control points?
+            const prevY = y - itemHeight;
+            const prevX = index === 0 ? 320 : (isRight ? 160 : 480);
+
+            // Just a simple S-curve to the target point
+            // This is tricky without exact math, let's use a simpler "Center Line" with wide stroke for now, 
+            // OR simulate it with absolute positioning like before but use an SVG to draw the line between nodes.
+        });
+        return d;
+    };
 
     return (
-        <div className="space-y-12">
+        <div className="relative min-h-screen py-24 px-4 mx-auto overflow-hidden bg-[#1c2e4a]">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
+                backgroundImage: `radial-gradient(#ffffff 2px, transparent 2px)`,
+                backgroundSize: '32px 32px'
+            }} />
+
+            {/* Floating Clouds (Decorative) */}
+            <div className="absolute top-20 left-10 opacity-20 animate-pulse delay-700">
+                <Cloud size={120} />
+            </div>
+            <div className="absolute top-60 right-20 opacity-10 animate-pulse delay-1000">
+                <Cloud size={90} />
+            </div>
+            <div className="absolute bottom-40 left-1/4 opacity-15 animate-pulse">
+                <Cloud size={150} />
+            </div>
+
             {/* Header */}
-            {/* <div className="text-center space-y-4 border-b-2 border-slate-800 pb-8">
-                <h2 className="text-3xl font-bold text-white inline-flex items-center gap-3 font-mono tracking-tighter" style={{ fontFamily: '"Press Start 2P"' }}>
-                    <BookOpen className="w-8 h-8 text-green-500" /> KNOWLEDGE_BASE
-                </h2>
-                <p className="text-green-600 max-w-2xl mx-auto font-mono text-sm">
-                    &gt; ACCESSING ARCHIVE... <br />
-                    &gt; COMPLETE MODULES TO DECRYPT DATA AND EARN SOULBOUND BADGES.
-                </p>
-            </div> */}
-            {/* Note: Leader header is now handled by page.tsx, we focus on list */}
-
-            {/* Tier 1 */}
-            <TierSection title="Basic Training" sub="Fundamentals" icon={Lock} quests={tier1} getStatus={getStatus} onClick={setSelectedQuest} color="green" />
-
-            {/* Tier 2 */}
-            <TierSection title="Advanced Theory" sub="DeFi Protocols" icon={Star} quests={tier2} getStatus={getStatus} onClick={setSelectedQuest} color="cyan" />
-
-            {/* Tier 3 */}
-            <TierSection title="Field Operations" sub="Interactive Labs" icon={Scale} quests={tier3} getStatus={getStatus} onClick={setSelectedQuest} color="pink" />
+            <div className="relative z-10 text-center mb-12 space-y-2">
+                <h1 className="text-5xl font-heading text-white drop-shadow-[0_4px_0_rgba(0,0,0,0.5)] tracking-wide">
+                    STELLAR ACADEMY
+                </h1>
+                <p className="text-blue-200 font-heading text-xl uppercase tracking-widest">World 1: The Basics</p>
+            </div>
 
             {/* Modal Logic */}
             {selectedQuest && (
-                selectedQuest.component ? (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="w-full max-w-2xl relative bg-[#1c2e4a] rounded-3xl border-4 border-[#5d7599] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-                            <button
-                                onClick={() => setSelectedQuest(null)}
-                                className="absolute top-4 right-4 z-50 bg-[#ef233c] text-white p-2 rounded-full hover:bg-red-600 shadow-lg"
-                            >
-                                ✕
-                            </button>
-                            <div className="p-6">
-                                <h2 className="text-2xl text-white font-heading text-center mb-6">{selectedQuest.title} Lab</h2>
-                                {selectedQuest.component}
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <QuestView
-                        title={selectedQuest.title}
-                        content={selectedQuest.content}
-                        questions={selectedQuest.questions}
-                        onClose={() => setSelectedQuest(null)}
-                        onComplete={handleQuestComplete}
-                        isSubmitting={false}
-                    />
-                )
+                <QuestView
+                    title={selectedQuest.title}
+                    modules={selectedQuest.modules}
+                    onClose={() => setSelectedQuest(null)}
+                    onComplete={handleQuestComplete}
+                    isSubmitting={false}
+                />
             )}
-        </div>
-    );
-}
 
-// Helper Component for Tier Sections
-function TierSection({ title, sub, icon: Icon, quests, getStatus, onClick, color = "green" }: any) {
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-3 ml-2">
-                <div className="bg-[#ffb703] p-2 rounded-xl text-[#0d1b2a] shadow-sm transform -rotate-3">
-                    <Icon size={20} strokeWidth={2.5} />
+            <div className="space-y-32 relative max-w-2xl mx-auto py-20">
+                {/* Connecting Line */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-4 bg-slate-800/50 -translate-x-1/2 -z-10 rounded-full border-2 border-slate-700/50 border-dashed" />
+
+                {/* START MARKER (Now at top) */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 text-center animate-bounce -mt-10">
+                    <p className="font-heading text-slate-500 uppercase tracking-widest mb-2 text-xs">Start</p>
+                    <ArrowDown className="mx-auto text-slate-500" size={24} />
                 </div>
-                <div>
-                    <h3 className="text-2xl text-white font-heading uppercase leading-none drop-shadow-md">{title}</h3>
-                    <p className="text-[#94a3b8] text-xs font-bold uppercase tracking-wider">{sub}</p>
-                </div>
+
+                {pathQuests.map((quest, index) => {
+                    const status = getStatus(quest, index, pathQuests);
+                    const isLocked = status === 'locked';
+                    const isCompleted = status === 'completed';
+                    const isNext = status === 'available' && !pathQuests[index - 1]?.badgeId || (pathQuests[index - 1] && ownedBadges.includes(pathQuests[index - 1].badgeId) && !ownedBadges.includes(quest.badgeId));
+
+                    // Zig-zag layout: Even = Left, Odd = Right
+                    const isLeft = index % 2 === 0;
+
+                    return (
+                        <div
+                            key={quest.id}
+                            id={`quest-${quest.id}`}
+                            className={`relative flex items-center ${isLeft ? 'justify-end md:pr-48' : 'justify-start md:pl-48'} w-full group py-4`}
+                        >
+
+                            {/* Quest Node (Center) */}
+                            <div className={`absolute left-1/2 -translate-x-1/2 z-10 group ${isNext ? 'scale-110' : ''}`}>
+                                <button
+                                    onClick={() => !isLocked && setSelectedQuest(quest)}
+                                    disabled={isLocked}
+                                    className={`
+                                        w-28 h-28 rounded-[2.5rem] flex items-center justify-center border-b-[8px] transition-all duration-150 active:border-b-0 active:translate-y-2 relative 
+                                        ${isCompleted ? 'bg-yellow-400 border-yellow-600 text-black shadow-[0_8px_0_rgb(202,138,4)]' :
+                                            isLocked ? 'bg-slate-700 border-slate-800 text-slate-500 cursor-not-allowed shadow-[0_8px_0_rgb(30,41,59)]' :
+                                                // Dynamic Color Logic:
+                                                `bg-${quest.color}-500 border-${quest.color}-700 shadow-[0_8px_0_rgba(0,0,0,0.3)] text-white hover:brightness-110`
+                                        }
+                                        ${isNext ? 'animate-bounce-slow ring-4 ring-white ring-offset-4 ring-offset-slate-900' : ''}
+                                    `}
+                                >
+                                    {/* Shimmer Effect for Active Quests */}
+                                    {!isLocked && !isCompleted && (
+                                        <div className="absolute inset-0 bg-white/20 animate-[pulse_2s_infinite] rounded-[2.5rem]" />
+                                    )}
+
+                                    {isCompleted ? <Check size={40} strokeWidth={4} className="animate-in zoom-in spin-in duration-500 relative z-10" /> :
+                                        isLocked ? <Lock size={28} className="relative z-10 opacity-50" /> :
+                                            <quest.icon size={36} strokeWidth={2.5} className="group-hover:scale-125 transition-transform duration-300 relative z-10 animate-[bounce_3s_infinite]" />}
+
+                                    {/* Star Rating for Tier 4 */}
+                                    {quest.tier === 4 && !isLocked && (
+                                        <div className="absolute -top-4 -right-4 text-yellow-400 animate-pulse z-20">
+                                            <Star size={36} fill="currentColor" className="drop-shadow-lg" />
+                                        </div>
+                                    )}
+
+                                    {/* INTEGRATED LABEL (Pill Style) */}
+                                    <div className={`
+                                        absolute -bottom-5 left-1/2 -translate-x-1/2 
+                                        bg-white text-slate-900 border-4 border-slate-200 
+                                        px-3 py-1 rounded-full whitespace-nowrap z-20 shadow-md
+                                        flex flex-col items-center justify-center
+                                        transition-transform duration-300 group-hover:scale-105
+                                        ${isLocked ? 'opacity-50 grayscale' : 'opacity-100'}
+                                    `}>
+                                        <span className="text-xs font-heading font-black uppercase tracking-wider">{quest.title}</span>
+                                    </div>
+                                </button>
+                            </div>
+
+                            {/* Decorative Elements on Sides */}
+                            <div className={`hidden md:block absolute top-1/2 -translate-y-1/2 ${isLeft ? 'left-10' : 'right-10'} opacity-20 transform ${isLeft ? '-rotate-12' : 'rotate-12'}`}>
+                                {isLocked ? <Lock size={80} /> : <quest.icon size={80} className={`text-${quest.color}-400`} />}
+                            </div>
+
+                        </div>
+                    );
+                })}
             </div>
-            <div className="flex overflow-x-auto pb-4 gap-4 px-2 snap-x scrollbar-hide">
-                {quests.map((quest: Quest) => (
-                    <QuestCard
-                        key={quest.id}
-                        id={quest.id}
-                        tier={quest.tier}
-                        title={quest.title}
-                        description={quest.description}
-                        rewards={quest.rewards}
-                        icon={quest.icon}
-                        status={getStatus(quest)}
-                        onClick={() => onClick(quest)}
-                    />
-                ))}
+
+            <div className="text-center mt-20 space-y-4 pb-20">
+                <Cloud className="inline-block text-slate-700 opacity-50 animate-bounce" size={64} />
+                <p className="text-slate-500 font-heading uppercase tracking-widest text-sm">More Worlds Coming Soon...</p>
             </div>
         </div>
     );

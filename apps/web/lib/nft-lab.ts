@@ -84,14 +84,25 @@ export const MOCK_AI_IMAGES = [
     "/assets/ai-mocks/nano-banana.png"
 ];
 
-export function getRandomAIImage(prompt?: string) {
-    if (!prompt) return MOCK_AI_IMAGES[Math.floor(Math.random() * MOCK_AI_IMAGES.length)];
 
+export async function generateAIImage(prompt: string): Promise<string> {
+    // Basic cleaning of prompt to be URL safe
+    const cleanPrompt = encodeURIComponent(prompt.trim());
+    // Pollinations API: https://image.pollinations.ai/prompt/[prompt]
+    // We add seed to ensure randomness if they retry with same prompt, and nologo for clean look
+    const seed = Math.floor(Math.random() * 1000000);
+    const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?seed=${seed}&width=512&height=512&nologo=true`;
+
+    // We return the URL directly. The Image component will handle loading.
+    return url;
+}
+
+// Keep mock for fallback or specific offline testing if needed
+export function getMockAIImage(prompt?: string) {
+    if (!prompt) return MOCK_AI_IMAGES[Math.floor(Math.random() * MOCK_AI_IMAGES.length)];
     const lower = prompt.toLowerCase();
     if (lower.includes("cat")) return "/assets/ai-mocks/cyberpunk-cat.png";
     if (lower.includes("city") || lower.includes("neon")) return "/assets/ai-mocks/neon-city.png";
     if (lower.includes("space") || lower.includes("ape")) return "/assets/ai-mocks/space-ape.png";
-    if (lower.includes("banana")) return "/assets/ai-mocks/nano-banana.png";
-
     return MOCK_AI_IMAGES[Math.floor(Math.random() * MOCK_AI_IMAGES.length)];
 }
