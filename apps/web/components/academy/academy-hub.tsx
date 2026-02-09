@@ -7,6 +7,7 @@ import { SwapLab } from "./swap-lab";
 import { LPLab } from "./lp-lab";
 import { NFTCreator } from "./nft-creator";
 import { VaultLab } from "./vault-lab";
+
 import {
     Check,
     Lock,
@@ -59,6 +60,7 @@ export function AcademyHub() {
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [ownedBadges, setOwnedBadges] = useState<string[]>([]);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+
 
     // Fetch Badges to determine completion status
     useEffect(() => {
@@ -510,6 +512,10 @@ export function AcademyHub() {
                 </h1>
                 <p className="text-blue-200 font-heading text-xl uppercase tracking-widest">World 1: The Basics</p>
             </div>
+
+
+
+
 
             {/* Modal Logic */}
             {selectedQuest && (

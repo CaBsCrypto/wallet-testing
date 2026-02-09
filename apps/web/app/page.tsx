@@ -6,12 +6,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Zap, Activity, ShoppingBag, Wallet, Coins, Trophy, Plus, Settings, Gamepad2, GraduationCap, X } from "lucide-react";
 import { BadgeGallery } from "@/components/badge-gallery";
-import { AssetGallery } from "@/components/asset-gallery";
+
+import { OnboardingGuide } from "@/components/onboarding-guide";
 import { getUSDCBalance, checkUSDCTrust } from "@/lib/soroswap";
 
 export default function Home() {
   const { isConnected, connect, address } = useWallet();
-  const { pet, stats, isLoading, error, mint, trainAttribute, buyEnergyPotion, buySmallEnergyPotion, evolve, release } = usePet();
+  const { pet, stats, isLoading, error, mint, trainAttribute, buyEnergyPotion, buySmallEnergyPotion, evolve, release, refresh: fetchPet } = usePet();
   const [petName, setPetName] = useState("");
   const [balances, setBalances] = useState({ xlm: "0", usdc: "0" });
   const [showTrophies, setShowTrophies] = useState(false);
@@ -76,12 +77,24 @@ export default function Home() {
           className="w-full bg-[#1c2e4a] border-b-4 border-[#0d1b2a] p-4 text-center text-white text-xl font-bold uppercase placeholder:text-[#5d7599] focus:outline-none focus:border-[#ffb703] rounded-xl"
         />
         <button
-          className="btn-clash w-full bg-[#80ed99] text-[#0d1b2a] text-xl py-4 rounded-xl"
+          className="btn-clash w-full bg-[#80ed99] text-[#0d1b2a] text-xl py-4 rounded-xl relative overflow-hidden group"
           onClick={() => mint(petName)}
           disabled={!petName || isLoading}
         >
-          HATCH EGG
+          <span className="relative z-10 group-disabled:opacity-50">
+            {isLoading ? "HATCHING..." : "HATCH EGG"}
+          </span>
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+          )}
         </button>
+
+        {error && (
+          <div className="bg-red-500/20 border border-red-500 text-red-200 p-3 rounded-xl text-sm animate-in slide-in-from-top-2">
+            <p className="font-bold">Hatching Failed</p>
+            <p>{error}</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -134,19 +147,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Energy Bar (Floating below header) */}
-        {stats && (
-          <div className="bg-[#0d1b2a]/80 backdrop-blur-sm border border-[#5d7599]/30 rounded-full p-1 mx-4 shadow-lg animate-in slide-in-from-top-2 flex items-center gap-3 px-3">
-            <div className="flex items-center gap-1 text-[#ffb703]">
-              <Zap size={10} fill="currentColor" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">Energy</span>
-            </div>
-            <div className="flex-1 h-2 bg-[#1c2e4a] rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-orange-500 to-yellow-400 transition-all duration-500" style={{ width: `${stats.energy}%` }}></div>
-            </div>
-            <span className="text-[10px] text-white font-bold w-6 text-right">{stats.energy}%</span>
-          </div>
-        )}
+        {/* Energy Bar removed - Now Global */}
       </div>
 
       {/* PET CENTERPIECE */}
@@ -194,72 +195,39 @@ export default function Home() {
 
 
 
-      {/* EVOLUTION UPGRADE CARD (Conditional) */}
-      {pet.level >= 2 && !["dragon", "phoenix", "golem", "spirit"].includes(pet.design) && (
-        <div className="max-w-md mx-auto px-4 mt-8 animate-in slide-in-from-bottom-5">
-          <div className="bg-gradient-to-br from-purple-900 to-[#1c2e4a] border-4 border-purple-500 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_30px_rgba(168,85,247,0.4)]">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <Zap className="w-32 h-32" />
-            </div>
-            <h3 className="text-2xl text-white font-heading uppercase text-center mb-2 drop-shadow-md">Evolution Available</h3>
-            <p className="text-purple-200 text-center text-sm mb-6">Your companion is ready to evolve.</p>
-
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {["dragon", "phoenix", "golem", "spirit"].map(cls => (
-                <button
-                  key={cls}
-                  onClick={() => evolve(cls)}
-                  className="bg-[#0d1b2a] border-2 border-purple-400/50 rounded-xl p-3 text-center hover:border-purple-400 hover:bg-purple-900/50 transition-all uppercase font-bold text-xs"
-                >
-                  {cls}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ONBOARDING GUIDE (Handles Popups & Evolution) */}
+      <OnboardingGuide />
 
 
 
 
-      {/* ASSET GALLERY */}
-      <div className="max-w-lg mx-auto px-4 mt-8">
-        <AssetGallery />
-      </div>
+      {/* PET STATS & TRAINING - Removed (Global FAB used instead) */}
 
       {/* MAIN NAVIGATION CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-lg mx-auto mt-8 px-4">
-        <Link href="/game" className="group bg-[#0d1b2a] border-2 border-[#5d7599] rounded-2xl p-6 flex flex-col items-center gap-3 hover:border-[#ffb703] transition-all relative overflow-hidden">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mt-8 px-4">
+
+        <Link href="/game" className="group bg-[#0d1b2a] border-2 border-[#5d7599] rounded-2xl p-4 flex flex-col items-center gap-2 hover:border-[#ffb703] transition-all relative overflow-hidden">
           <div className="absolute inset-0 bg-[#ffb703]/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
-          <div className="bg-[#ffb703] p-4 rounded-full text-[#0d1b2a] group-hover:scale-110 transition-transform z-10">
-            <Gamepad2 size={32} />
-          </div>
-          <div className="text-center z-10">
-            <span className="text-white font-bold uppercase text-lg block">Arcade</span>
-            <span className="text-[#94a3b8] text-xs">Play & Earn</span>
-          </div>
+          <Gamepad2 size={24} className="text-[#ffb703] group-hover:scale-110 transition-transform relative z-10" />
+          <span className="text-white font-bold uppercase text-xs relative z-10">Arcade</span>
         </Link>
 
-        <Link href="/academy" className="group bg-[#0d1b2a] border-2 border-[#5d7599] rounded-2xl p-6 flex flex-col items-center gap-3 hover:border-[#80ed99] transition-all relative overflow-hidden">
+        <Link href="/collection" className="group bg-[#0d1b2a] border-2 border-[#5d7599] rounded-2xl p-4 flex flex-col items-center gap-2 hover:border-purple-500 transition-all relative overflow-hidden">
+          <div className="absolute inset-0 bg-purple-500/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+          <Wallet size={24} className="text-purple-500 group-hover:scale-110 transition-transform relative z-10" />
+          <span className="text-white font-bold uppercase text-xs relative z-10">Collection</span>
+        </Link>
+
+        <Link href="/academy" className="group bg-[#0d1b2a] border-2 border-[#5d7599] rounded-2xl p-4 flex flex-col items-center gap-2 hover:border-[#80ed99] transition-all relative overflow-hidden">
           <div className="absolute inset-0 bg-[#80ed99]/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
-          <div className="bg-[#80ed99] p-4 rounded-full text-[#0d1b2a] group-hover:scale-110 transition-transform z-10">
-            <GraduationCap size={32} />
-          </div>
-          <div className="text-center z-10">
-            <span className="text-white font-bold uppercase text-lg block">Academy</span>
-            <span className="text-[#94a3b8] text-xs">Learn DeFi</span>
-          </div>
+          <GraduationCap size={24} className="text-[#80ed99] group-hover:scale-110 transition-transform relative z-10" />
+          <span className="text-white font-bold uppercase text-xs relative z-10">Academy</span>
         </Link>
 
-        <Link href="/shop" className="group bg-[#0d1b2a] border-2 border-[#5d7599] rounded-2xl p-6 flex flex-col items-center gap-3 hover:border-[#ef233c] transition-all relative overflow-hidden">
+        <Link href="/shop" className="group bg-[#0d1b2a] border-2 border-[#5d7599] rounded-2xl p-4 flex flex-col items-center gap-2 hover:border-[#ef233c] transition-all relative overflow-hidden">
           <div className="absolute inset-0 bg-[#ef233c]/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
-          <div className="bg-[#ef233c] p-4 rounded-full text-white group-hover:scale-110 transition-transform z-10">
-            <ShoppingBag size={32} />
-          </div>
-          <div className="text-center z-10">
-            <span className="text-white font-bold uppercase text-lg block">Shop</span>
-            <span className="text-[#94a3b8] text-xs">Upgrades</span>
-          </div>
+          <ShoppingBag size={24} className="text-[#ef233c] group-hover:scale-110 transition-transform relative z-10" />
+          <span className="text-white font-bold uppercase text-xs relative z-10">Shop</span>
         </Link>
       </div>
       {/* FOOTER ACTIONS (RELEASE) */}

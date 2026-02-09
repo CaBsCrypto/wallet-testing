@@ -77,6 +77,25 @@ export function usePet() {
         }
     };
 
+    const gainXp = async (amount: number, reason: string = "Bonus XP") => {
+        if (!address) return;
+        setIsLoading(true);
+        setError(null);
+        addLog('info', 'Gaining XP', `${reason}: +${amount} XP`);
+        try {
+            const txHash = await addXp(address, amount);
+            addLog('success', 'XP Gained!', `${reason} Complete`, txHash);
+            setTimeout(() => fetchPet(), 4000);
+            return txHash;
+        } catch (err: any) {
+            setError(err.message);
+            addLog('error', 'XP Gain Failed', err.message);
+            return null;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const battle = async (move: "Fire" | "Water" | "Grass") => {
         if (!address) return;
         setIsLoading(true);
@@ -248,6 +267,7 @@ export function usePet() {
         buyEnergyPotion,
         buySmallEnergyPotion,
         refresh: fetchPet,
-        submitScore
+        submitScore,
+        gainXp
     };
 }

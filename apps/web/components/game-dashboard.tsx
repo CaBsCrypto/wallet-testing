@@ -327,73 +327,7 @@ export function GameDashboard() {
                             </div>
                         </div>
 
-                        {/* Stats Dashboard */}
-                        {stats && (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start max-w-5xl mx-auto">
-                                {/* Energy Core */}
-                                <div className="bg-black border-2 border-slate-800 p-6 md:p-8 hover:border-yellow-900/50 transition-colors group">
-                                    <div className="flex justify-between items-end mb-4">
-                                        <h3 className="text-lg md:text-xl text-yellow-500 font-mono uppercase font-bold flex items-center gap-2">
-                                            <Zap className="w-5 h-5 md:w-6 md:h-6" /> ENERGY_CORE
-                                        </h3>
-                                        <span className="text-xl md:text-2xl font-mono text-white group-hover:text-yellow-400 transition-colors">{stats.energy}/100</span>
-                                    </div>
-                                    <div className="h-4 md:h-6 w-full bg-slate-900 border border-slate-700 p-0.5">
-                                        <div className={`h-full transition-all duration-500 ${stats.energy < 20 ? 'bg-red-500 animate-pulse' : 'bg-gradient-to-r from-yellow-700 to-yellow-500'}`} style={{ width: `${stats.energy}%` }}></div>
-                                    </div>
-                                    <div className="mt-6 flex flex-col md:flex-row gap-3">
-                                        <button onClick={handleBuySmallPotion} disabled={stats.gold < 10} className="flex-1 bg-slate-950 border border-slate-800 p-3 text-xs font-mono text-slate-400 hover:border-yellow-500 hover:text-yellow-500 hover:bg-black transition-all uppercase flex justify-between px-4">
-                                            <span>Small Charge</span>
-                                            <span>10c</span>
-                                        </button>
-                                        <button onClick={handleBuyPotion} disabled={stats.gold < 50} className="flex-1 bg-slate-950 border border-slate-800 p-3 text-xs font-mono text-slate-400 hover:border-yellow-500 hover:text-yellow-500 hover:bg-black transition-all uppercase flex justify-between px-4">
-                                            <span>Full Reboot</span>
-                                            <span>50c</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Neural Stats */}
-                                <div className="bg-black border-2 border-slate-800 p-6 md:p-8 hover:border-cyan-900/50 transition-colors">
-                                    <h3 className="text-lg md:text-xl text-cyan-500 font-mono uppercase font-bold flex items-center gap-2 mb-6">
-                                        <Activity className="w-5 h-5 md:w-6 md:h-6" /> NEURAL_ID
-                                    </h3>
-                                    <div className="space-y-5">
-                                        {/* Str */}
-                                        <div className="space-y-1 group cursor-pointer" onClick={() => handleTrainStats('str')}>
-                                            <div className="flex justify-between text-xs font-mono text-slate-500 uppercase group-hover:text-red-400 transition-colors">
-                                                <span>STRENGTH</span>
-                                                <span className="font-bold">{stats.strength}</span>
-                                            </div>
-                                            <div className="h-1.5 bg-slate-900">
-                                                <div className="h-full bg-red-600" style={{ width: `${Math.min(stats.strength, 100)}%` }}></div>
-                                            </div>
-                                        </div>
-                                        {/* Agi */}
-                                        <div className="space-y-1 group cursor-pointer" onClick={() => handleTrainStats('agi')}>
-                                            <div className="flex justify-between text-xs font-mono text-slate-500 uppercase group-hover:text-cyan-400 transition-colors">
-                                                <span>AGILITY</span>
-                                                <span className="font-bold">{stats.agility}</span>
-                                            </div>
-                                            <div className="h-1.5 bg-slate-900">
-                                                <div className="h-full bg-cyan-600" style={{ width: `${Math.min(stats.agility, 100)}%` }}></div>
-                                            </div>
-                                        </div>
-                                        {/* Int */}
-                                        <div className="space-y-1 group cursor-pointer" onClick={() => handleTrainStats('int')}>
-                                            <div className="flex justify-between text-xs font-mono text-slate-500 uppercase group-hover:text-purple-400 transition-colors">
-                                                <span>INTELLECT</span>
-                                                <span className="font-bold">{stats.intelligence}</span>
-                                            </div>
-                                            <div className="h-1.5 bg-slate-900">
-                                                <div className="h-full bg-purple-600" style={{ width: `${Math.min(stats.intelligence, 100)}%` }}></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <p className="text-[10px] text-slate-600 mt-4 text-center uppercase">Click stats to train (Cost: 10 NRG)</p>
-                                </div>
-                            </div>
-                        )}
+                        {/* Stats Dashboard Removed - Now Global FAB */}
                     </div>
                 )}
 

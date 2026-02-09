@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import { TransactionProvider } from "@/contexts/transaction-context";
 import { TransactionLogger } from "@/components/transaction-logger";
 import { BottomNav } from "@/components/bottom-nav";
+import { GlobalStatus } from "@/components/global-status";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,7 +37,8 @@ export default function RootLayout({
       >
         <TransactionProvider>
 
-          <main className="container mx-auto px-4 py-8 relative z-10">
+          <main className="container mx-auto px-4 py-8 relative z-10 pb-24">
+            <GlobalStatus />
             {children}
           </main>
           <TransactionLogger />
